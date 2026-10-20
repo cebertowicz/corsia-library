@@ -16,6 +16,8 @@ FIXTURES = Path(__file__).parent / "fixtures"
         ("disallowed_license", "RULE_LICENSE"),
         ("scripts_directory", "RULE_NO_SCRIPTS"),
         ("symlink", "RULE_NO_SYMLINK"),
+        ("email_address", "RULE_PUBLIC_CONTENT"),
+        ("home_path", "RULE_PUBLIC_CONTENT"),
     ],
 )
 def test_seeded_refusals(fixture: str, rule: str) -> None:

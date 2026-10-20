@@ -19,7 +19,12 @@ FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
 ALLOWED_LICENSES = {"Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause"}
 ASSET_SUFFIXES = {".gif", ".jpeg", ".jpg", ".png", ".svg", ".ttf", ".woff", ".woff2"}
-PRIVATE_MARKERS = ("/Users/", "BEGIN CORSIA CONTEXT", "AGENT-SEND", "CORSIA CONTEXT SOURCES")
+PRIVATE_MARKERS = ("BEGIN CORSIA CONTEXT", "AGENT-SEND", "CORSIA CONTEXT SOURCES")
+PUBLIC_PATTERNS = {
+    "absolute home path": re.compile(r"(?<![A-Za-z0-9_])/(?:Users|home)/[^\s\"'<>`]+"),
+    "email address": re.compile(r"\b[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+\b"),
+    "credential-like string": re.compile(r"(?:gh[pous]_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{20,}|(?:api[_-]?key|token|password|secret)\s*[:=]\s*[\"']?[A-Za-z0-9_./+=-]{8,})", re.IGNORECASE),
+}
 
 
 @dataclass(frozen=True)
@@ -73,8 +78,9 @@ def public_text(text: str, item: str, filename: str) -> None:
     for marker in PRIVATE_MARKERS:
         if marker in text:
             raise ValidationError("RULE_PUBLIC_CONTENT", item, filename, f"contains private marker {marker!r}")
-    if re.search(r"(?:gh[pous]_\w{20,}|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{20,})", text):
-        raise ValidationError("RULE_PUBLIC_CONTENT", item, filename, "contains a secret-shaped value")
+    for label, pattern in PUBLIC_PATTERNS.items():
+        if pattern.search(text):
+            raise ValidationError("RULE_PUBLIC_CONTENT", item, filename, f"contains {label}")
 
 
 def safe_item(root: Path, item: str) -> None:
