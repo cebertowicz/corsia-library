@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+import skills_ref
 import yaml
 
 SCHEMA_URL = "https://schemas.agentskills.io/discovery/0.2.0/schema.json"
@@ -18,6 +19,7 @@ SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
 ALLOWED_LICENSES = {"Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause"}
+FLOW_YAML = re.compile(r"^(?:\s*-\s*|[^:#\n]*:\s*)[\[{]", re.MULTILINE)
 ASSET_SUFFIXES = {".gif", ".jpeg", ".jpg", ".png", ".svg", ".ttf", ".woff", ".woff2"}
 PRIVATE_MARKERS = ("BEGIN CORSIA CONTEXT", "AGENT-SEND", "CORSIA CONTEXT SOURCES")
 PUBLIC_PATTERNS = {
@@ -115,20 +117,25 @@ def version(value: Any, item: str, filename: str) -> str:
     return value
 
 
-def validate_skill(root: Path) -> dict[str, Any]:
-    item = f"skills/{root.name}"
+def skill_basics(root: Path, item: str) -> dict[str, Any]:
     skill = root / "SKILL.md"
     if not skill.is_file():
         raise ValidationError("RULE_SKILL_FILE", item, "SKILL.md", "uppercase SKILL.md is required")
     safe_item(root, item)
-    raw_frontmatter = skill.read_text(encoding="utf-8").split("---\n", 2)[1]
-    if re.search(r"(?:^|:\\s*)[\\[{]", raw_frontmatter):
-        raise ValidationError("RULE_NO_FLOW_YAML", item, "SKILL.md", "flow collections are refused")
     data = frontmatter(skill, item)
+    raw_frontmatter = skill.read_text(encoding="utf-8").split("---\n", 2)[1]
+    if FLOW_YAML.search(raw_frontmatter):
+        raise ValidationError("RULE_NO_FLOW_YAML", item, "SKILL.md", "flow collections are refused")
     if data.get("name") != root.name:
         raise ValidationError("RULE_SKILL_NAME", item, "SKILL.md", "name must match the directory")
     if not isinstance(data.get("description"), str) or not data["description"].strip():
         raise ValidationError("RULE_DESCRIPTION", item, "SKILL.md", "description is required")
+    return data
+
+
+def validate_skill(root: Path) -> dict[str, Any]:
+    item = f"skills/{root.name}"
+    data = skill_basics(root, item)
     metadata = data.get("metadata")
     if not isinstance(metadata, dict) or not all(isinstance(key, str) and isinstance(value, str) for key, value in metadata.items()):
         raise ValidationError("RULE_METADATA", item, "SKILL.md", "metadata must be a string map")
@@ -182,6 +189,8 @@ def sources(root: Path) -> list[dict[str, Any]]:
         path = entry.get("path")
         if not isinstance(path, str) or not path or PurePosixPath(path).is_absolute() or ".." in PurePosixPath(path).parts:
             raise ValidationError("RULE_SOURCE_PATH", name, "sources.yaml", "path must stay inside the pinned repository")
+        # Outside skills rarely carry metadata.version, so the reviewed pin row owns it.
+        version(entry.get("version"), name, "sources.yaml")
     return entries
 
 
@@ -224,11 +233,15 @@ def checkout_pin(entry: dict[str, Any], destination: Path) -> Path:
 
 
 def outside_entry(entry: dict[str, Any], source: Path) -> dict[str, Any]:
-    data = validate_skill(source)
+    data = skill_basics(source, entry["name"])
+    # CI runs the Agent Skills checker on skills/; pinned folders exist only here.
+    problems = skills_ref.validate(source)
+    if problems:
+        raise ValidationError("RULE_AGENT_SKILLS", entry["name"], "SKILL.md", "; ".join(problems))
     digest = f"sha256:{sha256_file(source / 'SKILL.md')}"
     if digest != entry["digest"]:
         raise ValidationError("RULE_PIN_DIGEST", entry["name"], "SKILL.md", "declared digest does not match the pinned source")
-    return {"name": data["name"], "description": data["description"], "type": "skill-md", "url": f"https://github.com/{entry['repo']}/tree/{entry['commit']}/{entry['path']}/SKILL.md", "digest": digest, "version": data["version"], "kind": "skill", "license": entry["license"], "source": {"repository": entry["repo"], "path": entry["path"], "commit": entry["commit"]}, "files": file_entries(source), "withdrawn": bool(entry.get("withdrawn", False)), "withdrawn_reason": entry.get("withdrawn_reason")}
+    return {"name": data["name"], "description": data["description"], "type": "skill-md", "url": f"https://github.com/{entry['repo']}/tree/{entry['commit']}/{entry['path']}/SKILL.md", "digest": digest, "version": entry["version"], "kind": "skill", "license": entry["license"], "source": {"repository": entry["repo"], "path": entry["path"], "commit": entry["commit"]}, "files": file_entries(source), "withdrawn": bool(entry.get("withdrawn", False)), "withdrawn_reason": entry.get("withdrawn_reason")}
 
 
 def build_index(root: Path) -> dict[str, Any]:

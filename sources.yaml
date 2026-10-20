@@ -1,1 +1,25 @@
-sources: []
+sources:
+  - name: huggingface-papers
+    repo: huggingface/skills
+    path: skills/huggingface-papers
+    commit: c3ff942be3e07116b475253f0a8fc4f54682c1a8
+    version: 1.0.0
+    license: Apache-2.0
+    digest: sha256:985c2d5c7261aba2b157811cde0c2b30134663694a4ab701280de28f941eb3b2
+    reviewed_by: Ecosystem
+  - name: internal-comms
+    repo: anthropics/skills
+    path: skills/internal-comms
+    commit: dbd4588f9e1033efb41dad4bef2f7947c8993d44
+    version: 1.0.0
+    license: Apache-2.0
+    digest: sha256:067b7587a344a928fc6534ef66b1bcd591fc7c26d207ea7ca3334aeb678d6475
+    reviewed_by: Ecosystem
+  - name: pdf
+    repo: openai/skills
+    path: skills/.curated/pdf
+    commit: 49f948faa9258a0c61caceaf225e179651397431
+    version: 1.0.0
+    license: Apache-2.0
+    digest: sha256:d108cf2b36355ab37eb5962933f4d09785ec002f3105c506129320209306b9d2
+    reviewed_by: Ecosystem

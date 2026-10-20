@@ -18,6 +18,8 @@ FIXTURES = Path(__file__).parent / "fixtures"
         ("symlink", "RULE_NO_SYMLINK"),
         ("email_address", "RULE_PUBLIC_CONTENT"),
         ("home_path", "RULE_PUBLIC_CONTENT"),
+        ("flow_yaml", "RULE_NO_FLOW_YAML"),
+        ("pin_without_version", "RULE_VERSION"),
     ],
 )
 def test_seeded_refusals(fixture: str, rule: str) -> None:
