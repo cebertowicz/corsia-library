@@ -1,0 +1,8 @@
+sources:
+  - name: unversioned-pin
+    repo: example/repository
+    path: skill
+    commit: 0123456789abcdef0123456789abcdef01234567
+    license: MIT
+    digest: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    reviewed_by: Ecosystem

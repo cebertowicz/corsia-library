@@ -1,4 +1,106 @@
 {
   "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
-  "skills": []
+  "skills": [
+    {
+      "name": "huggingface-papers",
+      "description": "Look up and read Hugging Face paper pages in markdown, and use the papers API for structured metadata such as authors, linked models/datasets/spaces, Github repo and project page. Use when the user shares a Hugging Face paper page URL, an arXiv URL or ID, or asks to summarize, explain, or analyze an AI research paper.",
+      "type": "skill-md",
+      "url": "https://github.com/huggingface/skills/tree/c3ff942be3e07116b475253f0a8fc4f54682c1a8/skills/huggingface-papers/SKILL.md",
+      "digest": "sha256:985c2d5c7261aba2b157811cde0c2b30134663694a4ab701280de28f941eb3b2",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "source": {
+        "repository": "huggingface/skills",
+        "path": "skills/huggingface-papers",
+        "commit": "c3ff942be3e07116b475253f0a8fc4f54682c1a8"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:985c2d5c7261aba2b157811cde0c2b30134663694a4ab701280de28f941eb3b2"
+        }
+      ],
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "internal-comms",
+      "description": "A set of resources to help me write all kinds of internal communications, using the formats that my company likes to use. Claude should use this skill whenever asked to write some sort of internal communications (status reports, leadership updates, 3P updates, company newsletters, FAQs, incident reports, project updates, etc.).",
+      "type": "skill-md",
+      "url": "https://github.com/anthropics/skills/tree/dbd4588f9e1033efb41dad4bef2f7947c8993d44/skills/internal-comms/SKILL.md",
+      "digest": "sha256:067b7587a344a928fc6534ef66b1bcd591fc7c26d207ea7ca3334aeb678d6475",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "source": {
+        "repository": "anthropics/skills",
+        "path": "skills/internal-comms",
+        "commit": "dbd4588f9e1033efb41dad4bef2f7947c8993d44"
+      },
+      "files": [
+        {
+          "path": "LICENSE.txt",
+          "sha256": "sha256:bc6b3af2f331cbc7fb0da1344efb2cbe5877a31498b4d70dbc7000f3405a1362"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:067b7587a344a928fc6534ef66b1bcd591fc7c26d207ea7ca3334aeb678d6475"
+        },
+        {
+          "path": "examples/3p-updates.md",
+          "sha256": "sha256:087e4363c0f3513728a7e695eeb9ead5c3ecd12a4681b59340691180e65b68fc"
+        },
+        {
+          "path": "examples/company-newsletter.md",
+          "sha256": "sha256:30f81cfbdb03858a006169c72169024089c7c5d3d32611d337782da4f38c86b5"
+        },
+        {
+          "path": "examples/faq-answers.md",
+          "sha256": "sha256:5ecd3356cd6666937f2ebefa753253edfdbdca15e368d07baf398bfcced72484"
+        },
+        {
+          "path": "examples/general-comms.md",
+          "sha256": "sha256:4d3a4bb198a77626bcf018e96b2b45a2dbabed172d4ade0fcd70d23ae8a47a47"
+        }
+      ],
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "pdf",
+      "description": "Use when tasks involve reading, creating, or reviewing PDF files where rendering and layout matter; prefer visual checks by rendering pages (Poppler) and use Python tools such as `reportlab`, `pdfplumber`, and `pypdf` for generation and extraction.",
+      "type": "skill-md",
+      "url": "https://github.com/openai/skills/tree/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/pdf/SKILL.md",
+      "digest": "sha256:d108cf2b36355ab37eb5962933f4d09785ec002f3105c506129320209306b9d2",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "source": {
+        "repository": "openai/skills",
+        "path": "skills/.curated/pdf",
+        "commit": "49f948faa9258a0c61caceaf225e179651397431"
+      },
+      "files": [
+        {
+          "path": "LICENSE.txt",
+          "sha256": "sha256:4dd13869245e356246a5b770723247bbb80a8f07a181d1d3d873a1734297cdb9"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:d108cf2b36355ab37eb5962933f4d09785ec002f3105c506129320209306b9d2"
+        },
+        {
+          "path": "agents/openai.yaml",
+          "sha256": "sha256:f8b223e25343559f57e1839ccd849fd1494a9729da33da04bb5074b7f80f4887"
+        },
+        {
+          "path": "assets/pdf.png",
+          "sha256": "sha256:17da356d195d4e3fa24f9becbee6b8d9e60e13005762b5ab0809c520c76da6ee"
+        }
+      ],
+      "withdrawn": false,
+      "withdrawn_reason": null
+    }
+  ]
 }
