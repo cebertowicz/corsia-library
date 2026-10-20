@@ -1,0 +1,8 @@
+sources:
+  - name: incompatible-pin
+    repo: example/repository
+    path: skill
+    commit: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    license: GPL-3.0-only
+    digest: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    reviewed_by: Ecosystem
