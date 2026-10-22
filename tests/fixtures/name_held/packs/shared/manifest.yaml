@@ -1,0 +1,5 @@
+schema: corsia.pack/1
+name: shared
+version: 1.0.0
+kind: connector
+summary: Demonstrate a name refusal.
