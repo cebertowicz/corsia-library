@@ -18,6 +18,8 @@ SCHEMA_URL = "https://schemas.agentskills.io/discovery/0.2.0/schema.json"
 SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$")
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
+NAME_FORMAT = re.compile(r"^[a-z][a-z0-9-]*$")
+CLAIM_WORDS = ("default", "official", "recommended")
 ALLOWED_LICENSES = {"Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause"}
 FLOW_YAML = re.compile(r"^(?:\s*-\s*|[^:#\n]*:\s*)[\[{]", re.MULTILINE)
 ASSET_SUFFIXES = {".gif", ".jpeg", ".jpg", ".png", ".svg", ".ttf", ".woff", ".woff2"}
@@ -244,7 +246,63 @@ def outside_entry(entry: dict[str, Any], source: Path) -> dict[str, Any]:
     return {"name": data["name"], "description": data["description"], "type": "skill-md", "url": f"https://github.com/{entry['repo']}/tree/{entry['commit']}/{entry['path']}/SKILL.md", "digest": digest, "version": entry["version"], "kind": "skill", "license": entry["license"], "source": {"repository": entry["repo"], "path": entry["path"], "commit": entry["commit"]}, "files": file_entries(source), "withdrawn": bool(entry.get("withdrawn", False)), "withdrawn_reason": entry.get("withdrawn_reason")}
 
 
+def reserved_names(root: Path) -> set[str]:
+    path = root / "reserved-names.yaml"
+    if not path.is_file():
+        raise ValidationError("RULE_RESERVED_FILE", "reserved-names", "reserved-names.yaml", "reserved-names.yaml is required")
+    names = load_mapping(path, "reserved-names").get("reserved")
+    if not isinstance(names, list) or not all(isinstance(name, str) for name in names):
+        raise ValidationError("RULE_RESERVED_FILE", "reserved-names", "reserved-names.yaml", "reserved must be a list of names")
+    return {name.lower() for name in names}
+
+
+def declared_names(root: Path) -> list[tuple[Any, str, str]]:
+    """Every item name as (name, holder, file): skill frontmatter, pack manifest, pin row."""
+    found = []
+    for kind, filename in (("skills", "SKILL.md"), ("packs", "manifest.yaml")):
+        directory = root / kind
+        for child in sorted(directory.iterdir()) if directory.is_dir() else []:
+            path = child / filename
+            if path.is_file():
+                item = f"{kind}/{child.name}"
+                data = frontmatter(path, item) if kind == "skills" else load_mapping(path, item)
+                found.append((data.get("name"), item, filename))
+    pins = load_mapping(root / "sources.yaml", "sources").get("sources", [])
+    for position, pin in enumerate(pins if isinstance(pins, list) else []):
+        if isinstance(pin, dict):
+            found.append((pin.get("name"), f"pins/{pin.get('name', position)}", "sources.yaml"))
+    return found
+
+
+def check_names(root: Path) -> None:
+    reserved = reserved_names(root)
+    holders: dict[str, str] = {}
+    for name, item, filename in declared_names(root):
+        if not isinstance(name, str) or not NAME_FORMAT.fullmatch(name):
+            raise ValidationError("RULE_NAME_FORMAT", item, filename, f"name {name!r} must match {NAME_FORMAT.pattern}")
+        key = name.lower()
+        if key in reserved:
+            raise ValidationError("RULE_NAME_RESERVED", item, filename, f"name '{name}' is reserved by the CORSIA platform (reserved-names.yaml)")
+        if any(word in key for word in CLAIM_WORDS):
+            raise ValidationError("RULE_NAME_CLAIM", item, filename, f"name '{name}' may not contain {', '.join(CLAIM_WORDS)}")
+        if key in holders:
+            raise ValidationError("RULE_NAME_HELD", item, filename, f"name '{name}' is already held by {holders[key]}")
+        holders[key] = item
+
+
+def check_names_kept(root: Path, base: str) -> None:
+    """Items are withdrawn, never deleted: a name in the base index stays in the index for good."""
+    old = subprocess.run(["git", "show", f"{base}:index.json"], cwd=root, capture_output=True, text=True)
+    if old.returncode:
+        return
+    kept = {entry["name"].lower() for entry in json.loads((root / "index.json").read_text(encoding="utf-8"))["skills"]}
+    for entry in json.loads(old.stdout)["skills"]:
+        if entry["name"].lower() not in kept:
+            raise ValidationError("RULE_NAME_HELD", entry["name"], "index.json", f"name '{entry['name']}' was in the base index and cannot leave it; withdraw the item instead of deleting it")
+
+
 def build_index(root: Path) -> dict[str, Any]:
+    check_names(root)
     entries = []
     for directory, make_entry in ((root / "skills", skill_entry), (root / "packs", pack_entry)):
         if directory.is_dir():

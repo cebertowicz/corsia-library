@@ -1,0 +1,33 @@
+# These names are held by the CORSIA platform.
+# The CORSIA installer refuses collisions on its own as well.
+reserved:
+  - worker
+  - webhook
+  - github
+  - google
+  - microsoft
+  - corsia-default
+  - corsia-sdlc
+  - agent-experience
+  - agent-team-decomposition
+  - apply-feedback
+  - attention-watch
+  - backlog-intake
+  - conductor-bootstrap
+  - connect-tools
+  - context-stewardship
+  - coordination-api
+  - decide-or-raise
+  - decision-brief
+  - engineering-standards
+  - experiment-design
+  - google-setup
+  - memory-placement
+  - microsoft-setup
+  - movement-review
+  - prioritization
+  - product-thinking
+  - skill-creator
+  - task-discipline
+  - time-to-agent
+  - workflow-design
