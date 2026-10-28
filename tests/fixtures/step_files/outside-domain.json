@@ -1,0 +1,1 @@
+{"domains":["example.co.uk"],"steps":[{"id":"open","says":"Open the app","action":"goto","url":"https://other.co.uk/"}]}

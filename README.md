@@ -36,4 +36,8 @@ To list or update an item, add or change its entry under `own_pins` in `sources.
 
 A blueprint's `manifest.yaml` also lists each non-manifest file and its SHA-256, and its folder includes `CHANGELOG.md`.
 
+## Browser step files
+
+A skill may include `steps/*.json` in the browser runner's format. CI checks declared registrable domains, the step shape, addresses outside those domains in typed values, scripted clicks, and a word list for sensitive actions. The word list cannot determine intent: synonyms, obfuscated terms, and harmful actions behind innocuous labels may pass. Reviewers must inspect every step, including whether the declared domains belong to the intended app.
+
 Licensed under Apache-2.0.

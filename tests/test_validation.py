@@ -36,6 +36,96 @@ def test_seeded_refusals(fixture: str, rule: str) -> None:
         validate_repository(FIXTURES / fixture)
 
 
+@pytest.mark.parametrize(("fixture", "rule"), [
+    ("outside-domain.json", "RULE_STEP_DOMAIN"),
+    ("literal-url.json", "RULE_STEP_LITERAL"),
+    ("risky.json", "RULE_STEP_RISKY"),
+    ("click-script.json", "RULE_STEP_SCRIPT"),
+])
+def test_seeded_step_refusals(tmp_path: Path, fixture: str, rule: str) -> None:
+    repo = tmp_path / "repo"
+    shutil.copytree(FIXTURES / "good", repo)
+    shutil.copyfile(FIXTURES / "step_files" / fixture, repo / "skills/example/steps/setup.json")
+    with pytest.raises(ValidationError, match=rule):
+        validate_repository(repo)
+
+
+@pytest.mark.parametrize(("change", "rule"), [
+    ({"domains": []}, "RULE_STEP_DOMAIN"),
+    ({"domains": ["other.github.io"], "steps": [{"id": "x", "says": "Open", "action": "goto", "url": "https://example.github.io"}]}, "RULE_STEP_DOMAIN"),
+    ({"steps": [{"id": "x", "says": "Enter", "action": "type", "selector": "#x", "value": "person@example.com"}]}, "RULE_STEP_LITERAL"),
+    ({"steps": [{"id": "x", "says": "Continue", "action": "click", "selector": "#delete-account"}]}, "RULE_STEP_RISKY"),
+    ({"steps": [{"id": "x", "says": "Continue", "action": "goto", "url": "https://example.co.uk/billing"}]}, "RULE_STEP_RISKY"),
+    ({"extra": True}, "RULE_STEP_FORMAT"),
+    ({"steps": [{"id": "x", "says": "Go", "action": "unknown"}]}, "RULE_STEP_FORMAT"),
+    ({"steps": [{"id": "x", "says": "Go", "action": "click", "selector": "#x", "extra": 1}]}, "RULE_STEP_FORMAT"),
+    ({"steps": [{"id": "x", "says": "Go", "action": "goto", "url": "https://${host}/"}]}, "RULE_STEP_FORMAT"),
+])
+def test_step_rules_in_library(tmp_path: Path, change: dict, rule: str) -> None:
+    repo = tmp_path / "repo"
+    shutil.copytree(FIXTURES / "good", repo)
+    path = repo / "skills/example/steps/setup.json"
+    data = json.loads(path.read_text())
+    data.update(change)
+    path.write_text(json.dumps(data))
+    with pytest.raises(ValidationError, match=rule):
+        validate_repository(repo)
+
+
+@pytest.mark.parametrize("text", ["Invite user", "Add member", "Add admin", "Make this user an admin", "admin role assignment", "Share", "Send token", "Billing", "Delete"])
+def test_screened_actions_are_refused(tmp_path: Path, text: str) -> None:
+    repo = tmp_path / "repo"
+    shutil.copytree(FIXTURES / "good", repo)
+    path = repo / "skills/example/steps/setup.json"
+    data = json.loads(path.read_text())
+    data["steps"][0]["says"] = text
+    path.write_text(json.dumps(data))
+    with pytest.raises(ValidationError, match="RULE_STEP_RISKY"):
+        validate_repository(repo)
+
+
+@pytest.mark.parametrize(("value", "refusal"), [
+    ("https://api.slack.com/apps", None),
+    ("message.channels", None),
+    ("someone@slack.com", "RULE_PUBLIC_CONTENT"),
+    ("evil.example.net", "RULE_STEP_LITERAL"),
+    ("someone@outside.com", "RULE_STEP_LITERAL"),
+    ("${address}", None),
+])
+def test_typed_addresses_match_declared_domains(tmp_path: Path, value: str, refusal: str | None) -> None:
+    repo = tmp_path / "repo"
+    shutil.copytree(FIXTURES / "good", repo)
+    path = repo / "skills/example/steps/setup.json"
+    data = {"domains": ["slack.com"], "steps": [
+        {"id": "fill", "says": "Enter a value", "action": "type", "selector": "#field", "value": value},
+    ]}
+    path.write_text(json.dumps(data))
+    if refusal is None:
+        validate_repository(repo)
+    else:
+        with pytest.raises(ValidationError, match=refusal):
+            validate_repository(repo)
+
+
+def test_admin_center_is_allowed(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    shutil.copytree(FIXTURES / "good", repo)
+    path = repo / "skills/example/steps/setup.json"
+    data = {"domains": ["microsoft.com"], "steps": [
+        {"id": "open", "says": "Open the admin center", "action": "goto", "url": "https://admin.microsoft.com/"},
+    ]}
+    path.write_text(json.dumps(data))
+    validate_repository(repo)
+
+
+def test_malformed_step_json_is_refused(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    shutil.copytree(FIXTURES / "good", repo)
+    (repo / "skills/example/steps/setup.json").write_text('{"domains":')
+    with pytest.raises(ValidationError, match="RULE_STEP_FORMAT"):
+        validate_repository(repo)
+
+
 def test_good_fixture_passes() -> None:
     index = build_index(FIXTURES / "good")
     assert index["$schema"].endswith("/0.2.0/schema.json")

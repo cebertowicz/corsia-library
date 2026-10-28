@@ -1,0 +1,1 @@
+{"domains":["example.com"],"steps":[{"id":"next","says":"Continue","action":"click","script":"document.querySelector('button').click()"}]}
