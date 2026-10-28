@@ -18,6 +18,5 @@
 
 - [ ] One item changed
 - [ ] `metadata.version` bumped
-- [ ] `index.json` rebuilt
 - [ ] `tools/check_library.py` and `pytest` pass locally
 - [ ] Nothing private: no email addresses, paths from my machine, keys or personal details

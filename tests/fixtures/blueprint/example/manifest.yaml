@@ -1,0 +1,12 @@
+schema: corsia.pack/1
+kind: blueprint
+name: example
+version: 1.0.0
+summary: An example blueprint
+fits:
+  - Example work
+requires:
+  - Example tools
+files:
+  - path: CHANGELOG.md
+    sha256: sha256:cd0210713777f77ad101610251b8dd61667a58d8e0386b92030b4e3d0ff60f81

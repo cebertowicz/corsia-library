@@ -17,7 +17,7 @@ import yaml
 from library_tools.vendor.skill_workflow_validation import validate_workflow
 
 SCHEMA_URL = "https://schemas.agentskills.io/discovery/0.2.0/schema.json"
-SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$")
+SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$")
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
 NAME_FORMAT = re.compile(r"^[a-z][a-z0-9-]*$")
@@ -223,6 +223,21 @@ def validate_pack(root: Path) -> dict[str, Any]:
     if not (root / "CHANGELOG.md").is_file():
         raise ValidationError("RULE_CHANGELOG", item, "CHANGELOG.md", "CHANGELOG.md is required")
     safe_item(root, item)
+    paths = [rel(root, path) for path in files(root)]
+    if any("\\" in path for path in paths) or len(paths) != len({path.casefold() for path in paths}):
+        raise ValidationError("RULE_PACK_PATH", item, "manifest.yaml", "paths must be portable and unique ignoring case")
+    for path in files(root):
+        data_bytes = path.read_bytes()
+        try:
+            data_bytes.decode("utf-8")
+            binary = b"\0" in data_bytes
+        except UnicodeDecodeError:
+            binary = True
+        if binary and not (rel(root, path).startswith("assets/") and data_bytes.startswith((
+            b"\x89PNG\r\n\x1a\n", b"\xff\xd8\xff", b"GIF87a", b"GIF89a",
+            b"\x00\x01\x00\x00", b"OTTO", b"ttcf", b"wOFF", b"wOF2",
+        ))):
+            raise ValidationError("RULE_BINARY", item, rel(root, path), "unsupported blueprint binary content")
     data = load_mapping(manifest, item)
     if data.get("schema") != "corsia.pack/1":
         raise ValidationError("RULE_PACK_SCHEMA", item, "manifest.yaml", "schema must be corsia.pack/1")
@@ -234,10 +249,11 @@ def validate_pack(root: Path) -> dict[str, Any]:
     if data["kind"] == "blueprint" and (not data.get("fits") or not data.get("requires")):
         raise ValidationError("RULE_BLUEPRINT_FIT", item, "manifest.yaml", "blueprints require fits and requires")
     declared_files = data.get("files")
-    if declared_files is not None:
-        actual_files = [entry for entry in file_entries(root) if entry["path"] != "manifest.yaml"]
-        if declared_files != actual_files:
-            raise ValidationError("RULE_MANIFEST_HASHES", item, "manifest.yaml", "files must match every non-manifest file")
+    actual_files = [entry for entry in file_entries(root) if entry["path"] != "manifest.yaml"]
+    if declared_files != actual_files:
+        raise ValidationError("RULE_MANIFEST_HASHES", item, "manifest.yaml", "files must list every non-manifest file with its hash")
+    if not isinstance(data.get("summary"), str) or not data["summary"].strip():
+        raise ValidationError("RULE_DESCRIPTION", item, "manifest.yaml", "summary is required")
     return data
 
 
@@ -281,12 +297,56 @@ def folder_digest(root: Path) -> str:
 
 def skill_entry(root: Path) -> dict[str, Any]:
     data = validate_skill(root)
-    return {"name": data["name"], "description": data["description"], "type": "skill-md", "url": f"skills/{root.name}/SKILL.md", "digest": f"sha256:{sha256_file(root / 'SKILL.md')}", "version": data["version"], "kind": "skill", "license": data.get("license", "Apache-2.0"), "source": "library", "files": file_entries(root), "withdrawn": False, "withdrawn_reason": None}
+    return {"name": data["name"], "description": data["description"], "type": "skill-md", "url": f"skills/{root.name}/SKILL.md", "digest": f"sha256:{sha256_file(root / 'SKILL.md')}", "version": data["version"], "kind": "skill", "license": data.get("license", "Apache-2.0"), "files": file_entries(root)}
 
 
-def pack_entry(root: Path) -> dict[str, Any]:
+def pack_entry(root: Path, source: dict[str, str], withdrawn: bool, reason: str | None) -> dict[str, Any]:
     data = validate_pack(root)
-    return {"name": data["name"], "description": data.get("summary", ""), "type": "archive", "url": f"packs/{root.name}/", "digest": folder_digest(root), "version": data["version"], "kind": "pack", "license": data.get("license", "Apache-2.0"), "source": "library", "files": file_entries(root), "withdrawn": False, "withdrawn_reason": None}
+    if data["kind"] != "blueprint":
+        raise ValidationError("RULE_PACK_KIND", root.name, "manifest.yaml", "only blueprints can be indexed")
+    return {"name": data["name"], "description": data["summary"], "type": "corsia-blueprint", "digest": folder_digest(root), "version": data["version"], "kind": "pack", "pack_kind": "blueprint", "source": source, "files": file_entries(root), "withdrawn": withdrawn, "withdrawn_reason": reason}
+
+
+def pinned_item(root: Path, pin: Any) -> dict[str, Any]:
+    """One of our own items, read from a merged commit so its row survives a squash and installs on every client."""
+    if not isinstance(pin, dict):
+        raise ValidationError("RULE_OWN_PIN", "own_pins", "sources.yaml", "own pin must be a mapping")
+    name, repository, path, commit = (pin.get(key) for key in ("name", "repo", "path", "commit"))
+    if not isinstance(name, str) or not NAME_FORMAT.fullmatch(name) or path not in {f"skills/{name}", f"packs/{name}"}:
+        raise ValidationError("RULE_OWN_PIN", str(name), "sources.yaml", "path must be skills/<name> or packs/<name>")
+    if repository != "cebertowicz/corsia-library" or not isinstance(commit, str) or not FULL_SHA.fullmatch(commit):
+        raise ValidationError("RULE_OWN_PIN", name, "sources.yaml", "pin requires the library repository and a full commit SHA")
+    withdrawn, reason = pin.get("withdrawn", False), pin.get("withdrawn_reason")
+    if not isinstance(withdrawn, bool) or (reason is not None and not isinstance(reason, str)) or (withdrawn and not reason):
+        raise ValidationError("RULE_OWN_PIN", name, "sources.yaml", "withdrawn must be a boolean and withdrawn items need a reason")
+    if name in reserved_names(root) or any(word in name for word in CLAIM_WORDS):
+        raise ValidationError("RULE_OWN_PIN", name, "sources.yaml", "name is reserved or makes a prohibited claim")
+    ancestor = subprocess.run(["git", "merge-base", "--is-ancestor", commit, "HEAD"], cwd=root, capture_output=True)
+    if ancestor.returncode:
+        raise ValidationError("RULE_OWN_PIN", name, "sources.yaml", "commit must be an ancestor of HEAD")
+    tree = subprocess.run(["git", "ls-tree", "-rz", "--full-tree", commit, "--", path + "/"], cwd=root, capture_output=True, check=True)
+    with tempfile.TemporaryDirectory() as temporary:
+        item = Path(temporary) / name
+        item.mkdir()
+        for record in tree.stdout.split(b"\0"):
+            if not record:
+                continue
+            metadata, raw_path = record.split(b"\t", 1)
+            mode, kind, _ = metadata.split(b" ", 2)
+            filename = raw_path.decode("utf-8").removeprefix(path + "/")
+            parts = PurePosixPath(filename).parts
+            if mode != b"100644" or kind != b"blob":
+                raise ValidationError("RULE_OWN_PIN", name, filename, "pinned item contains a symlink, executable or non-file")
+            if not parts or any(part.startswith(".") or part == "scripts" for part in parts):
+                raise ValidationError("RULE_OWN_PIN", name, filename, "pinned item contains an unsafe path")
+            content = subprocess.run(["git", "show", f"{commit}:{path}/{filename}"], cwd=root, capture_output=True, check=True).stdout
+            target = item.joinpath(*parts)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(content)
+        source = {"repository": repository, "path": path, "commit": commit}
+        if path.startswith("packs/"):
+            return pack_entry(item, source, withdrawn, reason)
+        return {**skill_entry(item), "source": source, "withdrawn": withdrawn, "withdrawn_reason": reason}
 
 
 def checkout_pin(entry: dict[str, Any], destination: Path) -> Path:
@@ -374,13 +434,24 @@ def check_names_kept(root: Path, base: str) -> None:
 def build_index(root: Path) -> dict[str, Any]:
     check_names(root)
     entries = []
-    for directory, make_entry in ((root / "skills", skill_entry), (root / "packs", pack_entry)):
+    for directory, validate in ((root / "skills", validate_skill), (root / "packs", validate_pack)):
         if directory.is_dir():
-            entries.extend(make_entry(child) for child in sorted(directory.iterdir()) if child.is_dir())
+            for child in sorted(directory.iterdir()):
+                if child.is_symlink():
+                    raise ValidationError("RULE_NO_SYMLINK", directory.name, child.name, "symlinks are refused")
+                if child.is_dir():
+                    validate(child)
     check_nested_workflows(root)
+    pins = load_mapping(root / "sources.yaml", "sources").get("own_pins", [])
+    if not isinstance(pins, list):
+        raise ValidationError("RULE_OWN_PIN", "index", "sources.yaml", "own_pins must be a list")
+    entries.extend(pinned_item(root, pin) for pin in pins)
     for entry in sources(root):
         with tempfile.TemporaryDirectory() as temporary:
             entries.append(outside_entry(entry, checkout_pin(entry, Path(temporary) / "source")))
+    names = [entry["name"].casefold() for entry in entries]
+    if len(names) != len(set(names)):
+        raise ValidationError("RULE_NAME_HELD", "index", "sources.yaml", "indexed names must be unique")
     return {"$schema": SCHEMA_URL, "skills": sorted(entries, key=lambda item: item["name"])}
 
 

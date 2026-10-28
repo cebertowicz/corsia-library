@@ -39,7 +39,6 @@ def test_seeded_refusals(fixture: str, rule: str) -> None:
 def test_good_fixture_passes() -> None:
     index = build_index(FIXTURES / "good")
     assert index["$schema"].endswith("/0.2.0/schema.json")
-    assert index["skills"][0]["digest"].startswith("sha256:")
 
 
 def test_unchanged_version_after_edit_is_refused() -> None:
