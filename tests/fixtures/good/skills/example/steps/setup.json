@@ -1,0 +1,9 @@
+{
+  "domains": ["example.co.uk"],
+  "steps": [
+    {"id": "open", "says": "Open the app", "action": "goto", "url": "https://app.example.co.uk/start"},
+    {"id": "name", "says": "Enter a name", "action": "type", "selector": "#name", "value": "${name}"},
+    {"id": "continue", "says": "Continue", "action": "click", "selector": "#continue"},
+    {"id": "ready", "says": "Wait for readiness", "action": "wait_for", "selector": "#ready", "timeout": 5}
+  ]
+}

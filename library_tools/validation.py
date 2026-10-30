@@ -15,6 +15,7 @@ import skills_ref
 import yaml
 
 from library_tools.vendor.skill_workflow_validation import validate_workflow
+from library_tools.steps import validate_steps
 
 SCHEMA_URL = "https://schemas.agentskills.io/discovery/0.2.0/schema.json"
 SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$")
@@ -111,6 +112,13 @@ def safe_item(root: Path, item: str) -> None:
         if "scripts" in parts:
             raise ValidationError("RULE_NO_SCRIPTS", item, filename, "scripts are refused until sandbox checks exist")
         asset = parts[0] == "assets" and path.suffix.lower() in ASSET_SUFFIXES
+        step_file = path.suffix.lower() == ".json" and any(part.lower() == "steps" for part in parts[:-1])
+        if step_file:
+            try:
+                validate_steps(path)
+            except ValueError as error:
+                rule, _, detail = str(error).partition(": ")
+                raise ValidationError(rule, item, filename, detail) from error
         data = path.read_bytes()
         try:
             public_text(data.decode("utf-8"), item, filename)
