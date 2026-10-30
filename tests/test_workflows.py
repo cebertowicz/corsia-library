@@ -79,6 +79,22 @@ def test_sidecar_still_gets_public_content_checks(workflow_repo: Path) -> None:
         validate_repository(workflow_repo)
 
 
+@pytest.mark.parametrize(("instruction", "rule"), [
+    ("'# Example'", None),
+    ("'# Missing'", "RULE_WORKFLOW_INSTRUCTION"),
+    ("Drafting", "RULE_WORKFLOW"),
+])
+def test_instruction_end_to_end(workflow_repo: Path, instruction: str, rule: str | None) -> None:
+    (workflow_repo / "skills/example/corsia.yaml").write_text(
+        f"workflow:\n  steps:\n    - id: first\n      check: Done\n      instruction: {instruction}\n"
+    )
+    if rule is None:
+        validate_repository(workflow_repo)
+    else:
+        with pytest.raises(ValidationError, match=rule):
+            validate_repository(workflow_repo)
+
+
 @pytest.mark.parametrize(("instruction", "valid"), [("# Example", True), ("# Missing", False), ("Use this fixture only to verify the library envelope.", False), (None, False)])
 def test_instruction_heading(workflow_repo: Path, instruction: object, valid: bool) -> None:
     skill = workflow_repo / "skills/example"
