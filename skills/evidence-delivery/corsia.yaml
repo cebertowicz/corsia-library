@@ -1,0 +1,41 @@
+workflow:
+  steps:
+    - id: source-contract
+      title: Establish sources and completion evidence
+      required: true
+      check: audience, whole requested scope, authoritative sources and freshness, counterexample, output, authority and limits recorded
+      difficulty:
+        default: standard
+    - id: research
+      title: Gather missing evidence and counterevidence
+      required: false
+      check: primary-source findings, contradictory evidence, selection limits, remaining unknowns and source-access and spending limits recorded
+      after:
+        - source-contract
+      difficulty:
+        default: standard
+    - id: assemble
+      title: Assemble the source-based document
+      required: true
+      check: actual document covers requested scope and distinguishes observations, owner judgments and unknowns with traceable material claims
+      after:
+        - source-contract
+        - research
+      difficulty:
+        default: standard
+    - id: verify
+      title: Check claims and actual output
+      required: true
+      check: whole-result source, counterexample, calculation, link and applicable format checks recorded on the exact document; failures corrected or explicitly held
+      after:
+        - assemble
+      difficulty:
+        default: standard
+    - id: deliver
+      title: Deliver within existing authority
+      required: true
+      check: verified document placed and indexed where applicable, audience handoff recorded, remaining gaps and known total cost stated without implying recipient acceptance
+      after:
+        - verify
+      difficulty:
+        default: routine
