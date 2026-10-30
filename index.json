@@ -458,6 +458,37 @@
       "withdrawn_reason": null
     },
     {
+      "name": "product-design",
+      "description": "Steps for recurring product requirements and design work, including a design-only deliverable before anything is built: ground the current experience, record requirements, verify human and agent journeys, resolve required approvals, and hand off the exact design. Not for already-specified small fixes or implementation. No test results yet.",
+      "type": "skill-md",
+      "url": "skills/product-design/SKILL.md",
+      "digest": "sha256:ffce35c2bc5963bc14fcddb916c5e4bd5a62e8a9738c0d48c285162713963319",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:fb3ba7b35e307b897b1970c34e5b2a8471ae899a14ca84dbf7ac21de79b1ca93"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:ffce35c2bc5963bc14fcddb916c5e4bd5a62e8a9738c0d48c285162713963319"
+        },
+        {
+          "path": "corsia.yaml",
+          "sha256": "sha256:c78a797a40413ce659e5a629ea427040dd4ff45208ee9b00ed912cd2d9bb8f55"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/product-design",
+        "commit": "69a89e165897baba69b54a0535f9dc05cd161bdc"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
       "name": "status-reconciliation",
       "description": "Steps for a recurring standup or status sweep across several owners' work: collect current sources, reconcile work and open asks, update the status page, verify it, and send only what changed. Not for a single status question, doing the work itself, filing backlog items, or a decision alone. No test results yet.",
       "type": "skill-md",
