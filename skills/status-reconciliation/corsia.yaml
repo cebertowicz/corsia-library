@@ -1,0 +1,40 @@
+workflow:
+  steps:
+    - id: collect
+      title: Establish the complete current status scope
+      required: true
+      check: requested scope, current source set and snapshot times, owner coverage, authority and holds, missing or stale inputs explicitly recorded
+      difficulty:
+        default: standard
+    - id: reconcile
+      title: Reconcile work, dependencies and asks
+      required: true
+      check: each in-scope source dispositioned against current work, dependencies and decisions; contradictions and unknowns retained; only authorized dispositions made
+      after:
+        - collect
+      difficulty:
+        default: standard
+    - id: update
+      title: Update the status page
+      required: true
+      check: the requested page reflects reconciled state and provenance, with unrelated edits preserved and unresolved items still visible
+      after:
+        - reconcile
+      difficulty:
+        default: standard
+    - id: verify
+      title: Verify the snapshot and changed rows
+      required: true
+      check: whole requested scope and every changed material row checked against current sources; conflicts, omissions and unsupported completion claims corrected or explicitly held
+      after:
+        - update
+      difficulty:
+        default: standard
+    - id: deliver
+      title: Deliver what changed and keep the follow-through
+      required: true
+      check: necessary result or decision delivered through its usual channel, remaining dependencies owned, known cost and verification limits recorded without assuming receipt or approval
+      after:
+        - verify
+      difficulty:
+        default: routine

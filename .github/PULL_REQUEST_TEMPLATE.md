@@ -18,5 +18,6 @@
 
 - [ ] One item changed
 - [ ] `metadata.version` bumped
+- [ ] `CHANGELOG.md` has a line for that version
 - [ ] `tools/check_library.py` and `pytest` pass locally
 - [ ] Nothing private: no email addresses, paths from my machine, keys or personal details
