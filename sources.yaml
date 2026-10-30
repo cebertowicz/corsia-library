@@ -23,3 +23,72 @@ sources:
     license: Apache-2.0
     digest: sha256:d108cf2b36355ab37eb5962933f4d09785ec002f3105c506129320209306b9d2
     reviewed_by: Ecosystem
+own_pins:
+  - name: evidence-delivery
+    repo: cebertowicz/corsia-library
+    path: skills/evidence-delivery
+    commit: "19e02344cc7f7552e579e2c3a246a9b776778ef6"
+  - name: status-reconciliation
+    repo: cebertowicz/corsia-library
+    path: skills/status-reconciliation
+    commit: "19e02344cc7f7552e579e2c3a246a9b776778ef6"
+  - name: atlassian-setup
+    repo: cebertowicz/corsia-library
+    path: skills/atlassian-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: brave-search-setup
+    repo: cebertowicz/corsia-library
+    path: skills/brave-search-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: elevenlabs-setup
+    repo: cebertowicz/corsia-library
+    path: skills/elevenlabs-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: exa-setup
+    repo: cebertowicz/corsia-library
+    path: skills/exa-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: firecrawl-setup
+    repo: cebertowicz/corsia-library
+    path: skills/firecrawl-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: gitlab-setup
+    repo: cebertowicz/corsia-library
+    path: skills/gitlab-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: google-maps-setup
+    repo: cebertowicz/corsia-library
+    path: skills/google-maps-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: linear-setup
+    repo: cebertowicz/corsia-library
+    path: skills/linear-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: n8n-setup
+    repo: cebertowicz/corsia-library
+    path: skills/n8n-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: notion-setup
+    repo: cebertowicz/corsia-library
+    path: skills/notion-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: obsidian-setup
+    repo: cebertowicz/corsia-library
+    path: skills/obsidian-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: openalex-setup
+    repo: cebertowicz/corsia-library
+    path: skills/openalex-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: stripe-setup
+    repo: cebertowicz/corsia-library
+    path: skills/stripe-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: tavily-setup
+    repo: cebertowicz/corsia-library
+    path: skills/tavily-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: todoist-setup
+    repo: cebertowicz/corsia-library
+    path: skills/todoist-setup
+    commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
