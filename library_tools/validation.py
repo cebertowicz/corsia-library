@@ -14,6 +14,8 @@ from typing import Any
 import skills_ref
 import yaml
 
+from library_tools.vendor.skill_workflow_validation import validate_workflow
+
 SCHEMA_URL = "https://schemas.agentskills.io/discovery/0.2.0/schema.json"
 SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$")
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
@@ -142,7 +144,68 @@ def validate_skill(root: Path) -> dict[str, Any]:
     if not isinstance(metadata, dict) or not all(isinstance(key, str) and isinstance(value, str) for key, value in metadata.items()):
         raise ValidationError("RULE_METADATA", item, "SKILL.md", "metadata must be a string map")
     data["version"] = version(metadata.get("version"), item, "SKILL.md")
+    validate_sidecar(root, metadata)
     return data
+
+
+def validate_instructions(root: Path, workflow: dict[str, Any]) -> None:
+    """Check instruction references once the server validator accepts the field."""
+    headings = set((root / "SKILL.md").read_text(encoding="utf-8").splitlines())
+    for step in workflow.get("steps", []):
+        if isinstance(step, dict) and "instruction" in step:
+            instruction = step["instruction"]
+            if not isinstance(instruction, str) or not re.match(r"^#{1,6} \S", instruction) or instruction not in headings:
+                raise ValidationError("RULE_WORKFLOW_INSTRUCTION", f"skills/{root.name}", "SKILL.md", f"instruction {instruction!r} must match a heading line")
+
+
+def validate_sidecar(root: Path, metadata: dict[str, str]) -> dict[str, Any] | None:
+    item = f"skills/{root.name}"
+    sidecars = [path for path in root.iterdir() if path.name.lower() == "corsia.yaml"]
+    pointer = metadata.get("corsia-data")
+    if not sidecars:
+        if pointer is not None:
+            raise ValidationError("RULE_SIDECAR_POINTER", item, "SKILL.md", "corsia-data points to a missing corsia.yaml")
+        return None
+    if len(sidecars) != 1 or pointer != "corsia.yaml" or metadata.get("corsia-format") != "1":
+        raise ValidationError("RULE_SIDECAR_POINTER", item, "SKILL.md", "one corsia.yaml requires corsia-data: corsia.yaml and corsia-format: '1'")
+    path = sidecars[0]
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, yaml.YAMLError) as error:
+        raise ValidationError("RULE_SIDECAR_KEYS", item, path.name, f"invalid YAML: {error}") from error
+    if not isinstance(data, dict):
+        raise ValidationError("RULE_SIDECAR_KEYS", item, path.name, "expected a mapping containing only workflow")
+    for key in data:
+        if key != "workflow":
+            raise ValidationError("RULE_SIDECAR_KEYS", item, path.name, f"unknown key {key!r}")
+    workflow = data.get("workflow")
+    if not isinstance(workflow, dict):
+        raise ValidationError("RULE_WORKFLOW", item, path.name, "corsia.workflow must be a mapping")
+    for key in workflow:
+        if key not in {"steps", "result"}:
+            raise ValidationError("RULE_WORKFLOW_KEYS", item, path.name, f"unknown key {key!r}")
+    errors = validate_workflow({"workflow": workflow}, skill_name=root.name)
+    if errors:
+        raise ValidationError("RULE_WORKFLOW", item, path.name, "; ".join(errors))
+    validate_instructions(root, workflow)
+    return workflow
+
+
+def check_nested_workflows(root: Path) -> None:
+    skills = root / "skills"
+    if not skills.is_dir():
+        return
+    workflows = {}
+    for skill in sorted(path for path in skills.iterdir() if path.is_dir()):
+        data = frontmatter(skill / "SKILL.md", f"skills/{skill.name}")
+        workflow = validate_sidecar(skill, data["metadata"])
+        if workflow is not None:
+            workflows[skill.name] = workflow
+    for name, workflow in workflows.items():
+        for step in workflow.get("steps", []):
+            reference = step.get("workflow")
+            if reference is not None and reference.strip() not in workflows:
+                raise ValidationError("RULE_WORKFLOW_NESTED", f"skills/{name}", "corsia.yaml", f"nested workflow {reference!r} is not a library workflow skill")
 
 
 def validate_pack(root: Path) -> dict[str, Any]:
@@ -307,6 +370,7 @@ def build_index(root: Path) -> dict[str, Any]:
     for directory, make_entry in ((root / "skills", skill_entry), (root / "packs", pack_entry)):
         if directory.is_dir():
             entries.extend(make_entry(child) for child in sorted(directory.iterdir()) if child.is_dir())
+    check_nested_workflows(root)
     for entry in sources(root):
         with tempfile.TemporaryDirectory() as temporary:
             entries.append(outside_entry(entry, checkout_pin(entry, Path(temporary) / "source")))

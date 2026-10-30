@@ -15,4 +15,8 @@ Every skill, pack and outside pin has one name, and CI refuses a name that break
 
 A name never changes once taken. A withdrawn item keeps its name and stays in `index.json`, so nothing can take it over.
 
+## Workflows
+
+A workflow is a skill with a `corsia.yaml` containing `workflow:`. CI refuses a missing or incorrect SKILL.md pointer, other sidecar keys, workflow keys besides `steps` and `result`, invalid workflow data, and nested workflows that do not name another workflow skill in this library. Step instructions must name a heading in the skill's SKILL.md.
+
 Licensed under Apache-2.0.
