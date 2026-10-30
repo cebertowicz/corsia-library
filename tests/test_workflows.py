@@ -95,6 +95,28 @@ def test_instruction_end_to_end(workflow_repo: Path, instruction: str, rule: str
             validate_repository(workflow_repo)
 
 
+@pytest.mark.parametrize(("step", "detail"), [
+    ("by: agent", None),
+    ("by: reviewer", None),
+    ("by: person", None),
+    ("by: user", "by must be one of agent, reviewer, person"),
+    ("by: person\n      workflow: other", "can't be set on a step that runs a workflow"),
+])
+def test_by_end_to_end(workflow_repo: Path, step: str, detail: str | None) -> None:
+    shutil.copytree(workflow_repo / "skills/example", workflow_repo / "skills/other")
+    other = workflow_repo / "skills/other/SKILL.md"
+    other.write_text(other.read_text().replace("name: example", "name: other"))
+    (workflow_repo / "skills/example/corsia.yaml").write_text(
+        f"workflow:\n  steps:\n    - id: first\n      check: Done\n      {step}\n"
+    )
+    if detail is None:
+        validate_repository(workflow_repo)
+    else:
+        with pytest.raises(ValidationError, match="RULE_WORKFLOW") as error:
+            validate_repository(workflow_repo)
+        assert detail in str(error.value)
+
+
 @pytest.mark.parametrize(("instruction", "valid"), [("# Example", True), ("# Missing", False), ("Use this fixture only to verify the library envelope.", False), (None, False)])
 def test_instruction_heading(workflow_repo: Path, instruction: object, valid: bool) -> None:
     skill = workflow_repo / "skills/example"
