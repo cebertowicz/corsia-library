@@ -92,3 +92,7 @@ own_pins:
     repo: cebertowicz/corsia-library
     path: skills/todoist-setup
     commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: product-design
+    repo: cebertowicz/corsia-library
+    path: skills/product-design
+    commit: "69a89e165897baba69b54a0535f9dc05cd161bdc"
