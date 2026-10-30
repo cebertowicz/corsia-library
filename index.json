@@ -2,6 +2,226 @@
   "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
   "skills": [
     {
+      "name": "atlassian-setup",
+      "description": "Use when the work needs a person's Jira, Confluence or other Atlassian Cloud content and Atlassian isn't connected yet. Connects Atlassian's own hosted tool server with one sign-in.",
+      "type": "skill-md",
+      "url": "skills/atlassian-setup/SKILL.md",
+      "digest": "sha256:f86f964da1004a38511c30df17070952399f0de27cfc1c6ff27b11671c16fe88",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:f86f964da1004a38511c30df17070952399f0de27cfc1c6ff27b11671c16fe88"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/atlassian-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "brave-search-setup",
+      "description": "Use when the work needs web, news, image, video or local search through Brave Search and Brave Search isn't connected yet. Runs Brave's own tool server on this machine with the person's API key.",
+      "type": "skill-md",
+      "url": "skills/brave-search-setup/SKILL.md",
+      "digest": "sha256:6bfb7cd7f8244fbcc711bf0bc2d64b18c9143b2a5fb3286e63c8f80ce37ff6e5",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:6bfb7cd7f8244fbcc711bf0bc2d64b18c9143b2a5fb3286e63c8f80ce37ff6e5"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/brave-search-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "elevenlabs-setup",
+      "description": "Use when the work needs generated speech, voice cloning, transcription or audio cleanup through a person's ElevenLabs account and ElevenLabs isn't connected yet. Connects ElevenLabs' own hosted tool server with one sign-in.",
+      "type": "skill-md",
+      "url": "skills/elevenlabs-setup/SKILL.md",
+      "digest": "sha256:9d9dc5cb1a5fff2d17afd88fb38739fe81cb3b2a39f094d6fbffc9072520d3ef",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:9d9dc5cb1a5fff2d17afd88fb38739fe81cb3b2a39f094d6fbffc9072520d3ef"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/elevenlabs-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "evidence-delivery",
+      "description": "Steps for a recurring research report or source-based document: establish the sources, assemble the document, check its claims and format, and deliver it. Not for quick factual answers, code changes, experiments, or a decision message alone. No test results yet.",
+      "type": "skill-md",
+      "url": "skills/evidence-delivery/SKILL.md",
+      "digest": "sha256:795caeb0f866042731f3b863c4e27afe9fa590d599ce519c2a4cd555fb59240a",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:fb3ba7b35e307b897b1970c34e5b2a8471ae899a14ca84dbf7ac21de79b1ca93"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:795caeb0f866042731f3b863c4e27afe9fa590d599ce519c2a4cd555fb59240a"
+        },
+        {
+          "path": "corsia.yaml",
+          "sha256": "sha256:ff53f2e51cba980e783b29919241ddcfd2dff4f69b678b5a8b182d369c8cb920"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/evidence-delivery",
+        "commit": "19e02344cc7f7552e579e2c3a246a9b776778ef6"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "exa-setup",
+      "description": "Use when the work needs web search or page fetching through Exa and Exa isn't connected yet. Connects Exa's own hosted tool server, keyless first.",
+      "type": "skill-md",
+      "url": "skills/exa-setup/SKILL.md",
+      "digest": "sha256:089aee33bee040bb6e99b7803652bb1c467fd5c17eaeac9023b6d1393cdd0a59",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:089aee33bee040bb6e99b7803652bb1c467fd5c17eaeac9023b6d1393cdd0a59"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/exa-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "firecrawl-setup",
+      "description": "Use when the work needs to search the web, scrape or parse pages, or crawl a site through Firecrawl and Firecrawl isn't connected yet. Connects Firecrawl's own hosted tool server, keyless first.",
+      "type": "skill-md",
+      "url": "skills/firecrawl-setup/SKILL.md",
+      "digest": "sha256:da282892babce99978cb423683cffd172973e045d9257c0726ad2317447e4b7e",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:da282892babce99978cb423683cffd172973e045d9257c0726ad2317447e4b7e"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/firecrawl-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "gitlab-setup",
+      "description": "Use when the work needs a person's GitLab projects, issues, merge requests or pipelines and GitLab isn't connected yet. Connects the tool server built into GitLab, on GitLab.com or their own instance, with one sign-in.",
+      "type": "skill-md",
+      "url": "skills/gitlab-setup/SKILL.md",
+      "digest": "sha256:79153ba4fca1f25fb2330c8fd07a22bf3a7821fdb53b96dba547b48353008acf",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:79153ba4fca1f25fb2330c8fd07a22bf3a7821fdb53b96dba547b48353008acf"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/gitlab-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "google-maps-setup",
+      "description": "Use when the work needs to find places, plan routes, check the weather somewhere or resolve a location through Google Maps and Google Maps isn't connected yet. Connects Google Maps Platform's own hosted tool server with a key.",
+      "type": "skill-md",
+      "url": "skills/google-maps-setup/SKILL.md",
+      "digest": "sha256:853e520bca0f1de498671d5de466792692524ae054d98ff3c828eeb847c3210a",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:853e520bca0f1de498671d5de466792692524ae054d98ff3c828eeb847c3210a"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/google-maps-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
       "name": "huggingface-papers",
       "description": "Look up and read Hugging Face paper pages in markdown, and use the papers API for structured metadata such as authors, linked models/datasets/spaces, Github repo and project page. Use when the user shares a Hugging Face paper page URL, an arXiv URL or ID, or asks to summarize, explain, or analyze an AI research paper.",
       "type": "skill-md",
@@ -68,6 +288,141 @@
       "withdrawn_reason": null
     },
     {
+      "name": "linear-setup",
+      "description": "Use when the work needs a person's Linear issues, projects or teams and Linear isn't connected yet. Connects Linear's own hosted tool server with one sign-in, read-only when the work only reads.",
+      "type": "skill-md",
+      "url": "skills/linear-setup/SKILL.md",
+      "digest": "sha256:ff42bf28ec8f43c29c4179983c59cf9c15ec460a9cf3827bcca4861bc0bc9d44",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:ff42bf28ec8f43c29c4179983c59cf9c15ec460a9cf3827bcca4861bc0bc9d44"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/linear-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "n8n-setup",
+      "description": "Use when the work needs to find, run or build workflows in a person's n8n and n8n isn't connected yet. Connects the tool server built into their own n8n instance, cloud or self-hosted.",
+      "type": "skill-md",
+      "url": "skills/n8n-setup/SKILL.md",
+      "digest": "sha256:f6d1b394e5f6f6fa4561fddfa8fb9bb4501738fd28b833285e7942df4dd4815d",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:f6d1b394e5f6f6fa4561fddfa8fb9bb4501738fd28b833285e7942df4dd4815d"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/n8n-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "notion-setup",
+      "description": "Use when the work needs a person's Notion pages or databases and Notion isn't connected yet. Connects Notion's own hosted tool server with one sign-in; no key and no app to create.",
+      "type": "skill-md",
+      "url": "skills/notion-setup/SKILL.md",
+      "digest": "sha256:39ed4380e353cdb67a8a4ed64fa1076c99299a7e021fa03fc3b7e098328653e4",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:39ed4380e353cdb67a8a4ed64fa1076c99299a7e021fa03fc3b7e098328653e4"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/notion-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "obsidian-setup",
+      "description": "Use when the work needs to read, search or add to a person's Obsidian vault (notes, daily notes, tasks) and the Obsidian command isn't available yet. Turns on Obsidian's own command-line interface.",
+      "type": "skill-md",
+      "url": "skills/obsidian-setup/SKILL.md",
+      "digest": "sha256:65fa30751598113415b5231791bad087bfed7e0d26ccfe0c2f4370f274e4b552",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:65fa30751598113415b5231791bad087bfed7e0d26ccfe0c2f4370f274e4b552"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/obsidian-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "openalex-setup",
+      "description": "Use when the work needs scholarly research data (papers, authors, journals, institutions, topics, citations) through OpenAlex and OpenAlex isn't connected yet. Connects OpenAlex's own hosted tool server with one sign-in.",
+      "type": "skill-md",
+      "url": "skills/openalex-setup/SKILL.md",
+      "digest": "sha256:6be5e618b984198b17ce669da8ffbac8cbe2d2d2682154ca1784ee295be96290",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:6be5e618b984198b17ce669da8ffbac8cbe2d2d2682154ca1784ee295be96290"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/openalex-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
       "name": "pdf",
       "description": "Use when tasks involve reading, creating, or reviewing PDF files where rendering and layout matter; prefer visual checks by rendering pages (Poppler) and use Python tools such as `reportlab`, `pdfplumber`, and `pypdf` for generation and extraction.",
       "type": "skill-md",
@@ -99,6 +454,118 @@
           "sha256": "sha256:17da356d195d4e3fa24f9becbee6b8d9e60e13005762b5ab0809c520c76da6ee"
         }
       ],
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "status-reconciliation",
+      "description": "Steps for a recurring standup or status sweep across several owners' work: collect current sources, reconcile work and open asks, update the status page, verify it, and send only what changed. Not for a single status question, doing the work itself, filing backlog items, or a decision alone. No test results yet.",
+      "type": "skill-md",
+      "url": "skills/status-reconciliation/SKILL.md",
+      "digest": "sha256:664314f9ac54dd51478384d866fc3f6e3c70e39e8a2ff55845907d7c5fd85051",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:fb3ba7b35e307b897b1970c34e5b2a8471ae899a14ca84dbf7ac21de79b1ca93"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:664314f9ac54dd51478384d866fc3f6e3c70e39e8a2ff55845907d7c5fd85051"
+        },
+        {
+          "path": "corsia.yaml",
+          "sha256": "sha256:49c57d5d3694d34f50026ac889c5a25f12fe7ca63645cb7b15561b0a6227c766"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/status-reconciliation",
+        "commit": "19e02344cc7f7552e579e2c3a246a9b776778ef6"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "stripe-setup",
+      "description": "Use when the work needs a person's Stripe data (customers, payments, invoices, subscriptions) or Stripe's docs and Stripe isn't connected yet. Connects Stripe's own hosted tool server with one sign-in.",
+      "type": "skill-md",
+      "url": "skills/stripe-setup/SKILL.md",
+      "digest": "sha256:a1caa05f40a32006ea41d44bb603d811d303e4c23be8571df45978d9d7dd014d",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:a1caa05f40a32006ea41d44bb603d811d303e4c23be8571df45978d9d7dd014d"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/stripe-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "tavily-setup",
+      "description": "Use when the work needs web search, page extraction, site crawling or research through Tavily and Tavily isn't connected yet. Connects Tavily's own hosted tool server with one sign-in.",
+      "type": "skill-md",
+      "url": "skills/tavily-setup/SKILL.md",
+      "digest": "sha256:e6a5427c93bcd9e53bc7edf4b1a6bd641900d02fafefc5ba692fa153bc89812f",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:e6a5427c93bcd9e53bc7edf4b1a6bd641900d02fafefc5ba692fa153bc89812f"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/tavily-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "todoist-setup",
+      "description": "Use when the work needs a person's Todoist tasks or projects and Todoist isn't connected yet. Connects Todoist's own hosted tool server with one sign-in.",
+      "type": "skill-md",
+      "url": "skills/todoist-setup/SKILL.md",
+      "digest": "sha256:2b6d2c1e0f77063753e57522baf3c7c02c78551106a8195d01fd7aa24f7f9a63",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:2b6d2c1e0f77063753e57522baf3c7c02c78551106a8195d01fd7aa24f7f9a63"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/todoist-setup",
+        "commit": "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+      },
       "withdrawn": false,
       "withdrawn_reason": null
     }
