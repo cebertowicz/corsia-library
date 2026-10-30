@@ -19,6 +19,7 @@ REPOSITORY = Path(__file__).parents[1]
         ("short_sha", "RULE_PIN_SHA"),
         ("disallowed_license", "RULE_LICENSE"),
         ("scripts_directory", "RULE_NO_SCRIPTS"),
+        ("script_elsewhere", "RULE_NO_SCRIPTS"),
         ("symlink", "RULE_NO_SYMLINK"),
         ("email_address", "RULE_PUBLIC_CONTENT"),
         ("home_path", "RULE_PUBLIC_CONTENT"),

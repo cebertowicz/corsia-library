@@ -25,6 +25,9 @@ CLAIM_WORDS = ("default", "official", "recommended")
 ALLOWED_LICENSES = {"Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause"}
 FLOW_YAML = re.compile(r"^(?:\s*-\s*|[^:#\n]*:\s*)[\[{]", re.MULTILINE)
 ASSET_SUFFIXES = {".gif", ".jpeg", ".jpg", ".png", ".svg", ".ttf", ".woff", ".woff2"}
+# Items are instructions only: code under any folder name is refused, not just scripts/.
+TEXT_SUFFIXES = {".md", ".txt", ".yaml", ".yml", ".json", ".csv"}
+TEXT_NAMES = {"LICENSE", "NOTICE", "COPYING"}
 PRIVATE_MARKERS = ("BEGIN CORSIA CONTEXT", "AGENT-SEND", "CORSIA CONTEXT SOURCES")
 PUBLIC_PATTERNS = {
     "absolute home path": re.compile(r"(?<![A-Za-z0-9_])/(?:Users|home)/[^\s\"'<>`]+"),
@@ -107,12 +110,16 @@ def safe_item(root: Path, item: str) -> None:
             raise ValidationError("RULE_NO_EXECUTABLE", item, filename, "executable files are refused")
         if "scripts" in parts:
             raise ValidationError("RULE_NO_SCRIPTS", item, filename, "scripts are refused until sandbox checks exist")
+        asset = parts[0] == "assets" and path.suffix.lower() in ASSET_SUFFIXES
         data = path.read_bytes()
         try:
             public_text(data.decode("utf-8"), item, filename)
         except UnicodeDecodeError:
-            if not (parts[0] == "assets" and path.suffix.lower() in ASSET_SUFFIXES):
+            if not asset:
                 raise ValidationError("RULE_BINARY", item, filename, "binary file is not an approved asset")
+            continue
+        if not (asset or path.suffix.lower() in TEXT_SUFFIXES or path.name in TEXT_NAMES):
+            raise ValidationError("RULE_NO_SCRIPTS", item, filename, "only Markdown, text, YAML, JSON and CSV files are accepted until sandbox checks exist")
 
 
 def version(value: Any, item: str, filename: str) -> str:
