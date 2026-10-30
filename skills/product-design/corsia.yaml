@@ -1,0 +1,50 @@
+workflow:
+  steps:
+    - id: ground
+      title: Establish intent and current experience
+      required: true
+      check: whole requested outcome, audience, authority, current experience, relevant standards, prior decisions and strongest counterexample recorded with observations separated from assumptions
+      difficulty:
+        default: standard
+    - id: requirements
+      title: Record the reasoning and requirements
+      required: true
+      check: reasoning chain, credible alternatives including existing or nothing, functional and applicable nonfunctional obligations, constraints, dependencies, costs and smallest complete slice recorded
+      after:
+        - ground
+      difficulty:
+        default: standard
+    - id: human-design
+      title: Design and review the human experience
+      required: false
+      check: applicable journeys, states, information hierarchy and actual rendered design verified under the project's design rules, with findings settled
+      after:
+        - requirements
+      difficulty:
+        default: standard
+    - id: agent-design
+      title: Design and verify the agent experience
+      required: false
+      check: what the agent receives, a readable contract and fresh positive, neighboring and failure-case evidence recorded; unavailable required evidence held
+      after:
+        - requirements
+      difficulty:
+        default: standard
+    - id: acceptance
+      title: Resolve required reviews and decisions
+      required: true
+      check: whole design checked against requirements and counterexample, reviewer findings settled and existing approval requirements satisfied or explicitly held before handoff
+      after:
+        - requirements
+        - human-design
+        - agent-design
+      difficulty:
+        default: standard
+    - id: handoff
+      title: Deliver the exact design and open the next state
+      required: true
+      check: design and changes accessible to the next person, acceptance evidence and open limits recorded, next work owned without implying build or publication approval
+      after:
+        - acceptance
+      difficulty:
+        default: routine
