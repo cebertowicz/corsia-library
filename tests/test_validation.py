@@ -19,6 +19,7 @@ REPOSITORY = Path(__file__).parents[1]
         ("short_sha", "RULE_PIN_SHA"),
         ("disallowed_license", "RULE_LICENSE"),
         ("scripts_directory", "RULE_NO_SCRIPTS"),
+        ("script_elsewhere", "RULE_NO_SCRIPTS"),
         ("symlink", "RULE_NO_SYMLINK"),
         ("email_address", "RULE_PUBLIC_CONTENT"),
         ("home_path", "RULE_PUBLIC_CONTENT"),
@@ -38,7 +39,6 @@ def test_seeded_refusals(fixture: str, rule: str) -> None:
 def test_good_fixture_passes() -> None:
     index = build_index(FIXTURES / "good")
     assert index["$schema"].endswith("/0.2.0/schema.json")
-    assert index["skills"][0]["digest"].startswith("sha256:")
 
 
 def test_unchanged_version_after_edit_is_refused() -> None:

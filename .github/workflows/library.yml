@@ -21,6 +21,8 @@ jobs:
           "${{ steps.setup-python.outputs.python-path }}" -m venv .venv
           .venv/bin/python -m pip install --upgrade pip
           .venv/bin/python -m pip install -r requirements-dev.txt
+      - name: Check vendored workflow validator
+        run: .venv/bin/python tools/check_vendor.py
       - name: Validate Agent Skills
         shell: bash
         run: |
