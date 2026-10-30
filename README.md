@@ -2,7 +2,7 @@
 
 Shared Agent Skills, workflows, and blueprints for CORSIA agents.
 
-Contributions are not open yet.
+Contributions are open to invited contributors. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Names
 
@@ -14,6 +14,15 @@ Every skill, pack and outside pin has one name, and CI refuses a name that break
 - It does not contain `default`, `official` or `recommended`.
 
 A name never changes once taken. A withdrawn item keeps its name and stays in `index.json`, so nothing can take it over.
+
+## Files
+
+An item holds instructions only, and CI refuses any file that could run as code:
+
+- Text files must be Markdown, plain text, YAML, JSON or CSV, or be named `LICENSE`, `NOTICE` or `COPYING`. Code goes in fenced blocks inside Markdown.
+- Images and fonts are allowed only in `assets/`.
+- Scripts, executables, symlinks, hard links and dotfiles are refused, wherever they sit.
+- Email addresses, home-directory paths and anything that looks like a credential are refused.
 
 ## Workflows
 
