@@ -112,7 +112,7 @@ def safe_item(root: Path, item: str) -> None:
         if "scripts" in parts:
             raise ValidationError("RULE_NO_SCRIPTS", item, filename, "scripts are refused until sandbox checks exist")
         asset = parts[0] == "assets" and path.suffix.lower() in ASSET_SUFFIXES
-        step_file = item.startswith("skills/") and len(parts) == 2 and parts[0] == "steps" and path.suffix == ".json"
+        step_file = path.suffix.lower() == ".json" and any(part.lower() == "steps" for part in parts[:-1])
         if step_file:
             try:
                 validate_steps(path)

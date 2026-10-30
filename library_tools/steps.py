@@ -5,7 +5,7 @@ import ipaddress
 import json
 import re
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from publicsuffixlist import PublicSuffixList
 
@@ -21,9 +21,13 @@ RISKY_WORDS = re.compile(
 LITERAL_ADDRESS = re.compile(
     r"(?P<url>https?://[^\s\"'<>\\]+)|"
     r"\b[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@(?P<emailhost>[a-z0-9-]+(?:\.[a-z0-9-]+)+)|"
-    r"\b(?P<barehost>(?:[a-z0-9-]+\.)+[a-z]{2,})\b", re.IGNORECASE
+    r"\b(?P<ip>\d{1,3}(?:\.\d{1,3}){3})\b|"
+    r"\b(?P<barehost>(?:[\w-]+\.)+(?:xn--[a-z0-9-]+|[^\W\d_]{2,}))\b", re.IGNORECASE
 )
 PLACEHOLDER = re.compile(r"\$\{[^}]*\}")
+CAMEL_BOUNDARY = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
+# Browsers read a backslash as a slash and drop tabs and newlines; urlparse does not.
+URL_BREAKER = re.compile(r"[\\\x00-\x20\x7f]")
 SUFFIXES = PublicSuffixList()
 
 
@@ -39,23 +43,44 @@ def registrable_domain(host: str) -> str:
         return SUFFIXES.privatesuffix(host) or host
 
 
+def decoded(text: str) -> str:
+    while (text_once_decoded := unquote(text)) != text:
+        text = text_once_decoded
+    return text
+
+
+def ascii_host(host: str) -> str:
+    try:
+        return host.encode("idna").decode("ascii").lower()
+    except UnicodeError:
+        return host.lower()
+
+
 def outside_address(value: str, domains: list[str]) -> bool:
-    for match in LITERAL_ADDRESS.finditer(PLACEHOLDER.sub("", value)):
-        try:
-            host = urlparse(match.group("url")).hostname if match.group("url") else match.group("emailhost") or match.group("barehost")
-        except ValueError:
-            continue
-        if not host:
-            continue
-        try:
-            ipaddress.ip_address(host)
-        except ValueError:
-            if not SUFFIXES.privatesuffix(host, accept_unknown=False):
-                continue
-        domain = registrable_domain(host)
-        if domain and domain not in domains:
+    for match in LITERAL_ADDRESS.finditer(decoded(PLACEHOLDER.sub("", value))):
+        rest = ""
+        if match.group("url"):
+            try:
+                parsed = urlparse(match.group("url"))
+                host = parsed.hostname
+            except ValueError:
+                return True
+            rest = f"{parsed.path} {parsed.query} {parsed.fragment}"
+        else:
+            host = match.group("emailhost") or match.group("ip") or match.group("barehost")
+        if host:
+            host = ascii_host(host)
+            known = match.group("barehost") is None or SUFFIXES.privatesuffix(host, accept_unknown=False)
+            if known and registrable_domain(host) not in domains:
+                return True
+        if outside_address(rest, domains):
             return True
     return False
+
+
+def risky(text: str) -> bool:
+    words = CAMEL_BOUNDARY.sub(" ", decoded(PLACEHOLDER.sub("", text))).replace("_", " ")
+    return bool(RISKY_WORDS.search(words))
 
 
 def validate_steps(path: Path) -> None:
@@ -79,6 +104,8 @@ def validate_steps(path: Path) -> None:
     domains, steps = data["domains"], data["steps"]
     if not isinstance(domains, list) or not domains or not all(isinstance(x, str) and x.strip() for x in domains):
         fail("RULE_STEP_DOMAIN", "domains must be a non-empty list")
+    if any(SUFFIXES.privatesuffix(x, accept_unknown=False) != x for x in domains):
+        fail("RULE_STEP_DOMAIN", "each domain must be a registrable domain on a known suffix")
     if not isinstance(steps, list) or not steps:
         fail("RULE_STEP_FORMAT", "steps must be a non-empty list")
     if "note" in data and not isinstance(data["note"], str):
@@ -103,8 +130,8 @@ def validate_steps(path: Path) -> None:
             fail("RULE_STEP_FORMAT", "unknown step key")
         if any(PLACEHOLDER.search(value) for key, value in step.items() if isinstance(value, str) and not (action == "type" and key == "value")):
             fail("RULE_STEP_FORMAT", "placeholders are allowed only in type values")
-        for key in ("says", "selector", "url"):
-            if isinstance(step.get(key), str) and RISKY_WORDS.search(step[key]):
+        for key in ("says", "selector", "url", "value"):
+            if isinstance(step.get(key), str) and risky(step[key]):
                 fail("RULE_STEP_RISKY", f"step {identifier!r} contains a screened term")
         if action == "goto":
             keys = set(step) - {"id", "says", "action"}
@@ -112,6 +139,8 @@ def validate_steps(path: Path) -> None:
                 continue
             if keys != {"url"} or not isinstance(step.get("url"), str):
                 fail("RULE_STEP_FORMAT", "goto needs url or reload")
+            if URL_BREAKER.search(step["url"]):
+                fail("RULE_STEP_DOMAIN", "goto url contains a backslash, space or control character")
             try:
                 parsed = urlparse(step["url"])
                 domain = registrable_domain(parsed.hostname or "")
@@ -120,6 +149,8 @@ def validate_steps(path: Path) -> None:
                 parsed = None
             if not parsed or parsed.scheme not in {"http", "https"} or not domain or domain not in domains:
                 fail("RULE_STEP_DOMAIN", "goto must use an allowed http(s) domain")
+            if outside_address(step["url"], domains):
+                fail("RULE_STEP_LITERAL", "goto url names an address outside the declared domains")
         elif action in {"click", "type"}:
             if not isinstance(step.get("selector"), str) or (action == "type" and not isinstance(step.get("value"), str)):
                 fail("RULE_STEP_FORMAT", f"{action} needs selector and required value")

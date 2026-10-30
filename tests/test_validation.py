@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from library_tools.validation import ValidationError, build_index, check_names, check_names_kept, validate_repository, validate_version_change
+from library_tools.validation import ValidationError, build_index, check_names, check_names_kept, safe_item, validate_repository, validate_version_change
 
 FIXTURES = Path(__file__).parent / "fixtures"
 REPOSITORY = Path(__file__).parents[1]
@@ -72,6 +72,66 @@ def test_step_rules_in_library(tmp_path: Path, change: dict, rule: str) -> None:
         validate_repository(repo)
 
 
+@pytest.mark.parametrize("domain", ["localhost", "127.0.0.1", "192.168.1.1", "router.local", "app.example.co.uk", "co.uk", "Example.co.uk"])
+def test_declared_domains_must_be_registrable(tmp_path: Path, domain: str) -> None:
+    repo = tmp_path / "repo"
+    shutil.copytree(FIXTURES / "good", repo)
+    path = repo / "skills/example/steps/setup.json"
+    data = json.loads(path.read_text())
+    data["domains"] = [domain]
+    path.write_text(json.dumps(data))
+    with pytest.raises(ValidationError, match="RULE_STEP_DOMAIN"):
+        validate_repository(repo)
+
+
+@pytest.mark.parametrize(("url", "refusal"), [
+    ("https://evil.net\\@example.co.uk/", "RULE_STEP_DOMAIN"),
+    ("https://exa\tmple.co.uk/", "RULE_STEP_DOMAIN"),
+    ("https://example.co.uk/r?to=https://evil.net/", "RULE_STEP_LITERAL"),
+    ("https://example.co.uk/r?to=https%3A%2F%2Fevil.net%2F", "RULE_STEP_LITERAL"),
+    ("https://example.co.uk/r?to=https%253A%252F%252Fevil.net%252F", "RULE_STEP_LITERAL"),
+    ("https://example.co.uk/r?to=evil.net", "RULE_STEP_LITERAL"),
+    ("https://example.co.uk/r?to=127.0.0.1", "RULE_STEP_LITERAL"),
+    ("https://example.co.uk/r#https://evil.net/", "RULE_STEP_LITERAL"),
+    ("https://example.co.uk/%64elete", "RULE_STEP_RISKY"),
+    ("https://example.co.uk/start?next=/home", None),
+    ("https://example.co.uk/r?to=https://app.example.co.uk/", None),
+])
+def test_goto_urls_are_screened(tmp_path: Path, url: str, refusal: str | None) -> None:
+    repo = tmp_path / "repo"
+    shutil.copytree(FIXTURES / "good", repo)
+    path = repo / "skills/example/steps/setup.json"
+    data = {"domains": ["example.co.uk"], "steps": [{"id": "open", "says": "Open", "action": "goto", "url": url}]}
+    path.write_text(json.dumps(data))
+    if refusal is None:
+        validate_repository(repo)
+    else:
+        with pytest.raises(ValidationError, match=refusal):
+            validate_repository(repo)
+
+
+@pytest.mark.parametrize("selector", ["#btn_delete", "#confirmDelete", "#sendInvite", "#share_link", "#URLShare"])
+def test_selector_forms_are_screened(tmp_path: Path, selector: str) -> None:
+    repo = tmp_path / "repo"
+    shutil.copytree(FIXTURES / "good", repo)
+    path = repo / "skills/example/steps/setup.json"
+    data = json.loads(path.read_text())
+    data["steps"][2]["selector"] = selector
+    path.write_text(json.dumps(data))
+    with pytest.raises(ValidationError, match="RULE_STEP_RISKY"):
+        validate_repository(repo)
+
+
+@pytest.mark.parametrize("filename", ["steps/setup.json", "steps/setup.JSON", "Steps/setup.json", "steps/deeper/setup.json"])
+@pytest.mark.parametrize("item", ["skills/example", "packs/example", "example"])
+def test_every_step_file_is_checked(tmp_path: Path, item: str, filename: str) -> None:
+    path = tmp_path / "item" / filename
+    path.parent.mkdir(parents=True)
+    shutil.copyfile(FIXTURES / "step_files" / "risky.json", path)
+    with pytest.raises(ValidationError, match="RULE_STEP_RISKY"):
+        safe_item(tmp_path / "item", item)
+
+
 @pytest.mark.parametrize("text", ["Invite user", "Add member", "Add admin", "Make this user an admin", "admin role assignment", "Share", "Send token", "Billing", "Delete"])
 def test_screened_actions_are_refused(tmp_path: Path, text: str) -> None:
     repo = tmp_path / "repo"
@@ -91,6 +151,15 @@ def test_screened_actions_are_refused(tmp_path: Path, text: str) -> None:
     ("evil.example.net", "RULE_STEP_LITERAL"),
     ("someone@outside.com", "RULE_STEP_LITERAL"),
     ("${address}", None),
+    ("DELETE", "RULE_STEP_RISKY"),
+    ("${delete_this}", None),
+    ("https://api.slack.com/?next=https://evil.net/", "RULE_STEP_LITERAL"),
+    ("https://api.slack.com/?next=https://api.slack.com/apps", None),
+    ("http://localhost:8210/admin", "RULE_STEP_LITERAL"),
+    ("http://router.local/", "RULE_STEP_LITERAL"),
+    ("93.184.216.34", "RULE_STEP_LITERAL"),
+    ("xn--e1afmkfd.xn--p1ai", "RULE_STEP_LITERAL"),
+    ("пример.рф", "RULE_STEP_LITERAL"),
 ])
 def test_typed_addresses_match_declared_domains(tmp_path: Path, value: str, refusal: str | None) -> None:
     repo = tmp_path / "repo"

@@ -38,6 +38,6 @@ A blueprint's `manifest.yaml` also lists each non-manifest file and its SHA-256,
 
 ## Browser step files
 
-A skill may include `steps/*.json` in the browser runner's format. CI checks declared registrable domains, the step shape, addresses outside those domains in typed values, scripted clicks, and a word list for sensitive actions. The word list cannot determine intent: synonyms, obfuscated terms, and harmful actions behind innocuous labels may pass. Reviewers must inspect every step, including whether the declared domains belong to the intended app.
+A skill may include `steps/*.json` in the browser runner's format. CI checks every `.json` under a `steps` folder: each declared domain is a registrable domain on a known public suffix, so no local names or IP addresses; the step shape; addresses outside those domains in typed values and in URLs, redirect targets included; scripted clicks; and a word list for sensitive actions. The word list cannot determine intent: synonyms, obfuscated terms, and harmful actions behind innocuous labels may pass. Reviewers must inspect every step, including whether the declared domains belong to the intended app. Nothing automatic can tell what a page shows, so reviewers must also refuse a step file that goes to a page showing a token or key in the clear.
 
 Licensed under Apache-2.0.
