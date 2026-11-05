@@ -19,7 +19,7 @@ What the signed-in person can see: public and private channels they're in, direc
 ## Steps
 
 1. Check that Slack isn't already in Connected apps. If it is, use it.
-2. **Create the app.** Run `steps/create-app.json`. It opens Slack's create-app page with the manifest filled in. If steps from installed skills can't run yet, open the same address yourself. The person must be signed in to Slack in that browser, then picks the workspace and confirms Create. Choosing the workspace is theirs.
+2. **Create the app.** Run `steps/create-app.json`, which opens Slack's create-app page; if steps from installed skills can't run yet, open `https://api.slack.com/apps?new_app=1` yourself. The person must be signed in to Slack in that browser. Choose **From a manifest** and paste the manifest below yourself. Then the person picks the workspace and confirms Create. Choosing the workspace is theirs.
 3. **Get the client ID.** On the new app's Basic Information page, read only the **Client ID** field with one `browser_eval` that returns that field's value and nothing else. It isn't a secret. The same page holds the client secret and signing secret: never snapshot or screenshot it, never click Show, and never read any other field. The sign-in doesn't use them. If that one-field read misses, ask the person to copy only the Client ID into chat.
 4. **Add the connected app** by web address `https://mcp.slack.com/mcp`. Set `oauth_client_id` to that Client ID, and `oauth_callback` to host `localhost`, port `53682`, path `/callback`. These must match the manifest's redirect address exactly. Name the publisher as Slack, and say who can use it: the whole workspace, or only this project.
 5. **Sign in.** Hand the person Slack's sign-in and the Allow. Allowing also installs the app for them.
@@ -34,7 +34,7 @@ What the signed-in person can see: public and private channels they're in, direc
 
 ## The manifest
 
-The step file carries it already. The same text is here so you can paste it on Slack's "From a manifest" screen by hand:
+Paste this on Slack's "From a manifest" screen in step 2:
 
 ```yaml
 display_information:
