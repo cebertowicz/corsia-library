@@ -1,0 +1,21 @@
+{
+  "note": "Selectors are unchecked against Slack's live pages; any miss returns control to the agent. Stops at the workspace choice, which needs the person signed in to Slack.",
+  "domains": [
+    "slack.com"
+  ],
+  "steps": [
+    {
+      "id": "open-create",
+      "says": "Open Slack's create-app page with the CORSIA manifest filled in.",
+      "action": "goto",
+      "url": "https://api.slack.com/apps?new_app=1&manifest_yaml=display_information%3A%0A%20%20name%3A%20CORSIA%0Aoauth_config%3A%0A%20%20redirect_urls%3A%0A%20%20%20%20-%20http%3A//localhost%3A53682/callback%0A%20%20pkce_enabled%3A%20true%0A%20%20scopes%3A%0A%20%20%20%20user%3A%0A%20%20%20%20%20%20-%20search%3Aread.public%0A%20%20%20%20%20%20-%20search%3Aread.private%0A%20%20%20%20%20%20-%20search%3Aread.mpim%0A%20%20%20%20%20%20-%20search%3Aread.im%0A%20%20%20%20%20%20-%20channels%3Ahistory%0A%20%20%20%20%20%20-%20groups%3Ahistory%0A%20%20%20%20%20%20-%20mpim%3Ahistory%0A%20%20%20%20%20%20-%20im%3Ahistory%0A%20%20%20%20%20%20-%20channels%3Aread%0A%20%20%20%20%20%20-%20groups%3Aread%0A%20%20%20%20%20%20-%20im%3Aread%0A%20%20%20%20%20%20-%20mpim%3Aread%0A%20%20%20%20%20%20-%20chat%3Awrite%0Asettings%3A%0A%20%20token_rotation_enabled%3A%20true%0A"
+    },
+    {
+      "id": "wait-form",
+      "says": "Wait for Slack's create-app form to load.",
+      "action": "wait_for",
+      "selector": "text=/workspace/i",
+      "timeout": 20
+    }
+  ]
+}
