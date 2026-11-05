@@ -1,0 +1,21 @@
+{
+  "note": "Selectors are unchecked against Slack's live pages; any miss returns control to the agent. Stops at the workspace choice, which needs the person signed in to Slack.",
+  "domains": [
+    "slack.com"
+  ],
+  "steps": [
+    {
+      "id": "open-create",
+      "says": "Open Slack's create-app page.",
+      "action": "goto",
+      "url": "https://api.slack.com/apps?new_app=1"
+    },
+    {
+      "id": "wait-form",
+      "says": "Wait for Slack's create-app form to load.",
+      "action": "wait_for",
+      "selector": "text=/workspace/i",
+      "timeout": 20
+    }
+  ]
+}
