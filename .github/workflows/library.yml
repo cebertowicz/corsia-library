@@ -2,7 +2,10 @@ name: library checks
 
 on:
   pull_request:
+  # Feature branches are checked by their pull request against main's base;
+  # a branch push would compare with the branch's own previous commit.
   push:
+    branches: [main]
 
 jobs:
   validate:
