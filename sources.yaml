@@ -80,6 +80,10 @@ own_pins:
     repo: cebertowicz/corsia-library
     path: skills/openalex-setup
     commit: "471ab7076334a0b39eed075b26fa5d5a2f2c723a"
+  - name: slack-setup
+    repo: cebertowicz/corsia-library
+    path: skills/slack-setup
+    commit: "3ae14b86d2f17c98cd3b5b5ea2865efb290d79df"
   - name: stripe-setup
     repo: cebertowicz/corsia-library
     path: skills/stripe-setup

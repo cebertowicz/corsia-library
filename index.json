@@ -489,6 +489,37 @@
       "withdrawn_reason": null
     },
     {
+      "name": "slack-setup",
+      "description": "Use when the work needs to read, search or post in a person's Slack and Slack isn't connected yet. Creates the person's own Slack app from a manifest, then connects Slack's hosted tool server with one sign-in.",
+      "type": "skill-md",
+      "url": "skills/slack-setup/SKILL.md",
+      "digest": "sha256:604dfa56e5101b5c4ef26356bead78b0c899c123077218ca6bf14e1c5b743c68",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:1c09b8cf538b6575112f24c8481552f4bde4e2804c4d2c152b9bc4a10b527ffb"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:604dfa56e5101b5c4ef26356bead78b0c899c123077218ca6bf14e1c5b743c68"
+        },
+        {
+          "path": "steps/create-app.json",
+          "sha256": "sha256:8271c8c33decc4aff6f14c83ac85b7a74c98820e9bf1f80063f2eb686977c40a"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/slack-setup",
+        "commit": "3ae14b86d2f17c98cd3b5b5ea2865efb290d79df"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
       "name": "status-reconciliation",
       "description": "Steps for a recurring standup or status sweep across several owners' work: collect current sources, reconcile work and open asks, update the status page, verify it, and send only what changed. Not for a single status question, doing the work itself, filing backlog items, or a decision alone. No test results yet.",
       "type": "skill-md",
