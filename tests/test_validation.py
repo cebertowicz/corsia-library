@@ -18,8 +18,8 @@ REPOSITORY = Path(__file__).parents[1]
     [
         ("short_sha", "RULE_PIN_SHA"),
         ("disallowed_license", "RULE_LICENSE"),
-        ("scripts_directory", "RULE_NO_SCRIPTS"),
         ("script_elsewhere", "RULE_NO_SCRIPTS"),
+        ("script_nested_scripts", "RULE_NO_SCRIPTS"),
         ("symlink", "RULE_NO_SYMLINK"),
         ("email_address", "RULE_PUBLIC_CONTENT"),
         ("home_path", "RULE_PUBLIC_CONTENT"),
@@ -198,6 +198,10 @@ def test_malformed_step_json_is_refused(tmp_path: Path) -> None:
 def test_good_fixture_passes() -> None:
     index = build_index(FIXTURES / "good")
     assert index["$schema"].endswith("/0.2.0/schema.json")
+
+
+def test_scripts_folder_is_accepted() -> None:
+    validate_repository(FIXTURES / "scripts_folder")
 
 
 def test_unchanged_version_after_edit_is_refused() -> None:

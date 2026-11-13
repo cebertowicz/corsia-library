@@ -17,11 +17,12 @@ A name never changes once taken. A withdrawn item keeps its name and stays in `i
 
 ## Files
 
-An item holds instructions only, and CI refuses any file that could run as code:
+An item may carry scripts, but only in its top-level `scripts/` folder, as in the Agent Skills format:
 
-- Text files must be Markdown, plain text, YAML, JSON or CSV, or be named `LICENSE`, `NOTICE` or `COPYING`. Code goes in fenced blocks inside Markdown.
+- Scripts go in `scripts/` at the item's top level and must be UTF-8 text. They're committed without the executable bit, so call them through their interpreter (for example `python3 scripts/run.py`).
+- Other text files must be Markdown, plain text, YAML, JSON or CSV, or be named `LICENSE`, `NOTICE` or `COPYING`.
 - Images and fonts are allowed only in `assets/`.
-- Scripts, executables, symlinks, hard links and dotfiles are refused, wherever they sit.
+- Code outside `scripts/`, binaries other than those assets, executable files, symlinks, hard links and dotfiles are refused, wherever they sit.
 - Email addresses, home-directory paths and anything that looks like a credential are refused.
 
 ## Workflows
