@@ -26,7 +26,7 @@ CLAIM_WORDS = ("default", "official", "recommended")
 ALLOWED_LICENSES = {"Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause"}
 FLOW_YAML = re.compile(r"^(?:\s*-\s*|[^:#\n]*:\s*)[\[{]", re.MULTILINE)
 ASSET_SUFFIXES = {".gif", ".jpeg", ".jpg", ".png", ".svg", ".ttf", ".woff", ".woff2"}
-# Items are instructions only: code under any folder name is refused, not just scripts/.
+# Code (any UTF-8 text) is accepted only in the item's top-level scripts/ folder, as in Agent Skills.
 TEXT_SUFFIXES = {".md", ".txt", ".yaml", ".yml", ".json", ".csv"}
 TEXT_NAMES = {"LICENSE", "NOTICE", "COPYING"}
 PRIVATE_MARKERS = ("BEGIN CORSIA CONTEXT", "AGENT-SEND", "CORSIA CONTEXT SOURCES")
@@ -94,9 +94,6 @@ def public_text(text: str, item: str, filename: str) -> None:
 
 
 def safe_item(root: Path, item: str) -> None:
-    for directory in sorted(path for path in root.rglob("*") if path.is_dir()):
-        if directory.name == "scripts":
-            raise ValidationError("RULE_NO_SCRIPTS", item, rel(root, directory) + "/", "scripts are refused until sandbox checks exist")
     for path in files(root):
         filename = rel(root, path)
         parts = PurePosixPath(filename).parts
@@ -109,9 +106,8 @@ def safe_item(root: Path, item: str) -> None:
             raise ValidationError("RULE_NO_HARDLINK", item, filename, "hard links are refused")
         if stat.S_IMODE(info.st_mode) & 0o111:
             raise ValidationError("RULE_NO_EXECUTABLE", item, filename, "executable files are refused")
-        if "scripts" in parts:
-            raise ValidationError("RULE_NO_SCRIPTS", item, filename, "scripts are refused until sandbox checks exist")
         asset = parts[0] == "assets" and path.suffix.lower() in ASSET_SUFFIXES
+        script = parts[0] == "scripts" and len(parts) > 1
         step_file = path.suffix.lower() == ".json" and any(part.lower() == "steps" for part in parts[:-1])
         if step_file:
             try:
@@ -126,8 +122,8 @@ def safe_item(root: Path, item: str) -> None:
             if not asset:
                 raise ValidationError("RULE_BINARY", item, filename, "binary file is not an approved asset")
             continue
-        if not (asset or path.suffix.lower() in TEXT_SUFFIXES or path.name in TEXT_NAMES):
-            raise ValidationError("RULE_NO_SCRIPTS", item, filename, "only Markdown, text, YAML, JSON and CSV files are accepted until sandbox checks exist")
+        if not (asset or script or path.suffix.lower() in TEXT_SUFFIXES or path.name in TEXT_NAMES):
+            raise ValidationError("RULE_NO_SCRIPTS", item, filename, "code is accepted only in the item's top-level scripts/ folder")
 
 
 def version(value: Any, item: str, filename: str) -> str:
@@ -345,7 +341,7 @@ def pinned_item(root: Path, pin: Any) -> dict[str, Any]:
             parts = PurePosixPath(filename).parts
             if mode != b"100644" or kind != b"blob":
                 raise ValidationError("RULE_OWN_PIN", name, filename, "pinned item contains a symlink, executable or non-file")
-            if not parts or any(part.startswith(".") or part == "scripts" for part in parts):
+            if not parts or any(part.startswith(".") for part in parts):
                 raise ValidationError("RULE_OWN_PIN", name, filename, "pinned item contains an unsafe path")
             content = subprocess.run(["git", "show", f"{commit}:{path}/{filename}"], cwd=root, capture_output=True, check=True).stdout
             target = item.joinpath(*parts)

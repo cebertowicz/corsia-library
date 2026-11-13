@@ -28,7 +28,8 @@ Outside skills listed in `sources.yaml` are pinned copies. Change those in their
 ## What CI refuses
 
 The README's Names, Files and Workflows sections list every rule. In short, CI refuses:
-- any file that could run as code: text files other than Markdown, plain text, YAML, JSON and CSV, and executables, symlinks and dotfiles, wherever they sit (images and fonts are allowed in `assets/`);
+- code outside the item's top-level `scripts/` folder (everywhere else, text files must be Markdown, plain text, YAML, JSON or CSV);
+- binaries, executable files, symlinks and dotfiles, wherever they sit (images and fonts are allowed in `assets/`);
 - email addresses, home-directory paths and anything that looks like a credential;
 - a `corsia.yaml` with anything other than `workflow:`, or a workflow that doesn't pass CORSIA's own checks.
 

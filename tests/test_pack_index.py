@@ -54,7 +54,7 @@ def test_pending_pack_refusals(tmp_path: Path, case: str, rule: str) -> None:
     elif case == "dotfile":
         (pack / ".hidden").write_text("hidden")
     elif case == "scripts":
-        (pack / "scripts").mkdir()
+        (pack / "run.py").write_text("print('hello')\n")
     elif case == "executable":
         (pack / "CHANGELOG.md").chmod(0o755)
     elif case == "unlisted":
@@ -97,6 +97,23 @@ def test_two_stage_publication_and_update(tmp_path: Path) -> None:
     assert index_text(root) == text
     check(root)
     subprocess.run([sys.executable, str(CHECK), "--root", str(root), "--base", "HEAD^"], check=True, capture_output=True, text=True)
+
+
+def test_pinned_pack_with_scripts_folder_publishes(tmp_path: Path) -> None:
+    import hashlib
+    root = repo(tmp_path)
+    pack = root / "packs" / "example"
+    script = pack / "scripts" / "run.py"
+    script.parent.mkdir()
+    script.write_text("print('hello')\n")
+    manifest = pack / "manifest.yaml"
+    manifest.write_text(manifest.read_text() + f"  - path: scripts/run.py\n    sha256: sha256:{hashlib.sha256(script.read_bytes()).hexdigest()}\n")
+    git(root, "add", ".")
+    git(root, "commit", "-qm", "Add pending pack")
+    commit = git(root, "rev-parse", "HEAD")
+    (root / "sources.yaml").write_text(f"sources: []\nown_pins:\n  - name: example\n    repo: cebertowicz/corsia-library\n    path: packs/example\n    commit: {commit}\n")
+    row = json.loads(index_text(root))["skills"][0]
+    assert "scripts/run.py" in {entry["path"] for entry in row["files"]}
 
 
 def test_pin_must_be_ancestor(tmp_path: Path) -> None:
