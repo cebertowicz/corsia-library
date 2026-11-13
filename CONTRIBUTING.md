@@ -35,4 +35,4 @@ The README's Names, Files and Workflows sections list every rule. In short, CI r
 
 ## Review
 
-A maintainer reviews each pull request before it merges. Expect questions, not silence. The library is public and licensed Apache-2.0, so everything you submit is published under that license, permanently.
+Each pull request is reviewed against [`review/STANDARDS.md`](review/STANDARDS.md) before it merges, and every finding cites a rule there. Expect questions, not silence. The library is public and licensed Apache-2.0, so everything you submit is published under that license, permanently.
