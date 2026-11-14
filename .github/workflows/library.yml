@@ -15,10 +15,12 @@ jobs:
         with:
           fetch-depth: 0
       # A key in any commit of a contribution fails the check, so it never
-      # reaches what installs pull. The branch is already public, so a real
-      # key must be revoked as well as removed. A false match: add its
-      # fingerprint to .gitleaksignore, or end the line with a
-      # `gitleaks:allow` comment.
+      # reaches what installs pull. Each commit is scanned on its own, so a
+      # later commit that removes or marks the line does not clear it. A real
+      # key: revoke it (the branch is already public), then rewrite the
+      # branch so no commit holds it. A false match: add the fingerprint the
+      # report prints to .gitleaksignore, or end the line with a
+      # `gitleaks:allow` comment in the commit that adds it.
       - name: No committed keys (gitleaks)
         shell: bash
         env:
