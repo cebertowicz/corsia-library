@@ -3,6 +3,7 @@ name: inbox-triage
 description: >-
   Steps for a daily inbox check: brief the person on what needs them, urgent first, pass mail to their agents by their rules, and archive or mark read as their preferences say. Not for sending email, a one-off search or a single message. No test results yet.
 license: Apache-2.0
+compatibility: Step 4 routes mail to the person's other agents and needs CORSIA (agent messages and its event_rules, artifact_register and artifact_resolve tools); elsewhere, skip step 4. Archiving and mark-read need a mail tool that can make the change, such as gws for Gmail.
 metadata:
   version: 1.0.0
   corsia-data: corsia.yaml
