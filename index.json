@@ -245,6 +245,41 @@
       "withdrawn_reason": null
     },
     {
+      "name": "inbox-triage",
+      "description": "Steps for a daily inbox check: brief the person on what needs them, urgent first, pass mail to their agents by their rules, and archive or mark read as their preferences say. Not for sending email, a one-off search or a single message. No test results yet.",
+      "type": "skill-md",
+      "url": "skills/inbox-triage/SKILL.md",
+      "digest": "sha256:3c1c6c03beb9540ef7a052b9a8dcc35d6805b14402e5ab49b944c7e44b0cfa07",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:fb3ba7b35e307b897b1970c34e5b2a8471ae899a14ca84dbf7ac21de79b1ca93"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:3c1c6c03beb9540ef7a052b9a8dcc35d6805b14402e5ab49b944c7e44b0cfa07"
+        },
+        {
+          "path": "corsia.yaml",
+          "sha256": "sha256:b39aec6977853c28926203dc56d872892c3aea91a7638954a80c1aa59db280ce"
+        },
+        {
+          "path": "preferences-template.md",
+          "sha256": "sha256:c03e2aeffc103125e0b04c8affb5092d9049f7830f85bae75978558924606c8e"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/inbox-triage",
+        "commit": "a6432f74e8a5e46f6fa78258c342b01df786740a"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
       "name": "internal-comms",
       "description": "A set of resources to help me write all kinds of internal communications, using the formats that my company likes to use. Claude should use this skill whenever asked to write some sort of internal communications (status reports, leadership updates, 3P updates, company newsletters, FAQs, incident reports, project updates, etc.).",
       "type": "skill-md",
