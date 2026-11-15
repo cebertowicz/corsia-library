@@ -5,7 +5,7 @@ license: Apache-2.0
 metadata:
   corsia-data: corsia.yaml
   corsia-format: "1"
-  version: "1.0.2"
+  version: "1.0.3"
 ---
 
 # Pull-request review gate
@@ -30,7 +30,7 @@ The gate evaluates each pull-request head, stages its diff, conversation and sta
 
 ## Set up
 
-1. Install this skill and `pr-reviewer` into the owning agent's thread, and connect GitHub with an account allowed to write commit statuses and pull-request comments. The owning agent must be in a project that tracks each reviewed repository: register that repository's local checkout with `project_repo_register`. A rule that names a repository the project doesn't track is refused.
+1. Put the owning agent in a project that tracks each reviewed repository: attach it with `conversation_set_project` if it isn't in one, and register each repository's local checkout with `project_repo_register`. A rule that names a repository the project doesn't track is refused. Then install this skill and `pr-reviewer` into the owning agent's thread, and connect GitHub with an account allowed to write commit statuses and pull-request comments. Install after the agent joins its project: an agent's skills are read from its project's thread folder, so a copy installed before it joined is no longer found and its measures won't sync.
 2. Commit `references/review-standards.md` to the reviewed repository at the path listed in `rule-set.json` under `standards`; edit it to suit that repository.
 3. Set `repos`, `repo_checkouts`, `agents_login`, optional `sme`, standards paths, status contexts and other settings in `rule-set.json`. Leave `mode` as `shadow`. Set `extended_window_base` only if you configure the corresponding worker profile.
 4. Register each of the evaluate, stage and publish scripts with `automation_schedule`: kind `script`, no cadence, authenticated, timeout 300 seconds. Name exactly what each writes in its purpose: evaluate writes local state and emits events; stage writes local state, staged inputs and a detached worktree, and emits events; publish writes local state and shadow records, or in live mode commit statuses, pull-request comments and replies, review-thread resolution, and its own summary comment, and emits events.
