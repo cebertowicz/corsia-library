@@ -408,9 +408,9 @@ def _error(envelope: Mapping[str, Any], settings: Settings, client: Client, reas
            retrying: bool = True) -> PublishResult:
     repo, pr, head = envelope["repo"], envelope["pr"], envelope["head_sha"]
     detail = envelope["payload"].get("error")
-    # Today's reviewer names its failure reason in the error status description (e.g. "Reviewer account
-    # unavailable: usage_limited"), so the reason goes there, before the run ref: STATUS_LIMIT cuts from
-    # the tail, so a long reason must not push the ref out and take the reason with it.
+    # The error status description names why the review failed (for example, the worker's model hit a
+    # usage limit), so the reason goes there, before the run ref: STATUS_LIMIT cuts from the tail, so a
+    # long reason must not push the ref out and take the reason with it.
     why = f"{reason}: {detail}" if detail else reason
     again = " · retrying" if retrying else ""
     description = f"Review couldn't finish{again} · {why} · ref {str(envelope['run_id'])[:8]}"[:STATUS_LIMIT]

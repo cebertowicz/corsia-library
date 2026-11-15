@@ -96,7 +96,7 @@ events:
     corroborate:
       platform_event:
         event: github.issue.opened
-        true: defect
+        on: defect
   qa.review_stage_requested:
     use: route
     default_delivery: none
@@ -179,7 +179,7 @@ kpis:
         label: correct_block
       match:
       - event: qa.review.completed
-        true: run_id
+        on: run_id
         mode: exists
         anchor: true
     den:
@@ -190,7 +190,7 @@ kpis:
         - over_block
       match:
       - event: qa.review.completed
-        true: run_id
+        on: run_id
         mode: exists
         anchor: true
     coverage:
@@ -242,7 +242,7 @@ kpis:
         - high
       match:
       - event: qa.review.completed
-        true: run_id
+        on: run_id
         mode: exists
         anchor: true
     den:
@@ -258,7 +258,7 @@ kpis:
     review: 0.02
     min_n: 20
     settle_days: 14
-    alert: false
+    alert: off
     can_decide: true
   one_review_per_head:
     title: Heads with exactly one review
@@ -272,13 +272,13 @@ kpis:
       distinct: head_sha
       match:
       - event: qa.review.completed
-        true: head_sha
+        on: head_sha
         mode: exactly_one
       - event: qa.review.skipped
-        true: head_sha
+        on: head_sha
         mode: absent
       - event: github.check_suite.completed
-        true: head_sha
+        on: head_sha
         mode: absent
         where:
           conclusion:
@@ -292,10 +292,10 @@ kpis:
       distinct: head_sha
       match:
       - event: qa.review.skipped
-        true: head_sha
+        on: head_sha
         mode: absent
       - event: github.check_suite.completed
-        true: head_sha
+        on: head_sha
         mode: absent
         where:
           conclusion:
@@ -305,7 +305,7 @@ kpis:
     target: 1.0
     review: 0.98
     min_n: 25
-    alert: false
+    alert: off
   review_cost_per_pr:
     title: Review cost per PR
     unit: usd
@@ -322,7 +322,7 @@ kpis:
     target: 0.5
     review: 0.75
     min_n: 20
-    alert: false
+    alert: off
   push_churn:
     title: CI-triggered pushes per merged PR
     unit: ratio
@@ -334,12 +334,12 @@ kpis:
       - github.pr.pushed
       match:
       - event: github.check_suite.completed
-        true: head_sha
+        on: head_sha
         mode: exists
         where:
           app: github-actions
       - event: github.pr.merged
-        true: subject
+        on: subject
         mode: exists
         anchor: true
     den:
