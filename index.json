@@ -497,18 +497,18 @@
       "description": "Install and operate an automated pull-request review gate using repository standards and a confined review worker.",
       "type": "skill-md",
       "url": "skills/pr-review/SKILL.md",
-      "digest": "sha256:26ace942412ef17677d97009d473fa3429570d3d5563074d8dcc4e3c75ac72f9",
-      "version": "1.0.0",
+      "digest": "sha256:e56b9cb57c6f9d6a99af5febfbcf54a84b9389754a46b2c374a7592415cbab48",
+      "version": "1.0.1",
       "kind": "skill",
       "license": "Apache-2.0",
       "files": [
         {
           "path": "CHANGELOG.md",
-          "sha256": "sha256:49ce624fdaea7dd1febbfebc6b7f32f4d84e3b979e301e4f2dcf787dfa1c4a06"
+          "sha256": "sha256:0f93fe4329ead5a8594310526552168e1d4709a3e8243bc198cfe27def9bd707"
         },
         {
           "path": "SKILL.md",
-          "sha256": "sha256:26ace942412ef17677d97009d473fa3429570d3d5563074d8dcc4e3c75ac72f9"
+          "sha256": "sha256:e56b9cb57c6f9d6a99af5febfbcf54a84b9389754a46b2c374a7592415cbab48"
         },
         {
           "path": "corsia.yaml",
@@ -516,7 +516,7 @@
         },
         {
           "path": "measures.yaml",
-          "sha256": "sha256:ae86dfc9d22bbcf81055a82c537fdf83da4e5645c2d2a39a5673d0590dbdf0ad"
+          "sha256": "sha256:f8afdefbe1caae49b3bb900c6b4320702533a318bbcf7a5e20deae60bd2cb5b2"
         },
         {
           "path": "references/review-standards.md",
@@ -540,7 +540,7 @@
         },
         {
           "path": "scripts/review_gate_publish.py",
-          "sha256": "sha256:c37822cae489e844b7261a48c7075942056dcb21f2119a3decf62f21dfa722b1"
+          "sha256": "sha256:1e7d0078912f756fc27c1553c4fa5c8cfefa5e8769f0cc4bb0f1338fcb62d7f2"
         },
         {
           "path": "scripts/review_gate_stage.py",
@@ -549,6 +549,10 @@
         {
           "path": "scripts/tests/test_generic_config.py",
           "sha256": "sha256:cc1fa72ebd5909f32b11b718d1a3327fccee625e216161997c14aa47d9ca8dcd"
+        },
+        {
+          "path": "scripts/tests/test_measures_yaml.py",
+          "sha256": "sha256:596d8e890c7c49fecdaa3da0065aa088c54afc6b51fc22a775fa8417d9c82261"
         },
         {
           "path": "scripts/tests/test_review_gate_evaluate.py",
@@ -578,7 +582,7 @@
       "source": {
         "repository": "cebertowicz/corsia-library",
         "path": "skills/pr-review",
-        "commit": "9712564ab08644b0e2e769b7d1e3e097dcb64676"
+        "commit": "a5effc2ace94057dad19500552fbfc91caaa67f5"
       },
       "withdrawn": false,
       "withdrawn_reason": null
