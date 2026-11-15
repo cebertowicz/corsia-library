@@ -107,7 +107,7 @@ own_pins:
   - name: pr-review
     repo: cebertowicz/corsia-library
     path: skills/pr-review
-    commit: "9712564ab08644b0e2e769b7d1e3e097dcb64676"
+    commit: "a5effc2ace94057dad19500552fbfc91caaa67f5"
   - name: pr-reviewer
     repo: cebertowicz/corsia-library
     path: skills/pr-reviewer
