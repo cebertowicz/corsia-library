@@ -14,7 +14,7 @@ from typing import Any
 import skills_ref
 import yaml
 
-from library_tools.vendor.skill_workflow_validation import validate_workflow
+from library_tools.vendor.skill_workflow_validation import WORKFLOW_KEYS, validate_workflow
 from library_tools.steps import validate_steps
 
 SCHEMA_URL = "https://schemas.agentskills.io/discovery/0.2.0/schema.json"
@@ -193,7 +193,7 @@ def validate_sidecar(root: Path, metadata: dict[str, str]) -> dict[str, Any] | N
     if not isinstance(workflow, dict):
         raise ValidationError("RULE_WORKFLOW", item, path.name, "corsia.workflow must be a mapping")
     for key in workflow:
-        if key not in {"steps", "result"}:
+        if key not in WORKFLOW_KEYS:
             raise ValidationError("RULE_WORKFLOW_KEYS", item, path.name, f"unknown key {key!r}")
     errors = validate_workflow({"workflow": workflow}, skill_name=root.name)
     if errors:

@@ -29,6 +29,7 @@ def test_valid_workflow(workflow_repo: Path) -> None:
     ("origin: example\nworkflow: {}\n", "RULE_SIDECAR_KEYS", "origin"),
     ("- not a mapping\n", "RULE_SIDECAR_KEYS", "mapping"),
     ("workflow:\n  unknown: true\n", "RULE_WORKFLOW_KEYS", "unknown"),
+    ("workflow:\n  worker:\n    max_turns: 0\n  steps:\n    - id: first\n", "RULE_WORKFLOW", "max_turns"),
     ("workflow:\n  steps:\n    - id: first\n      required: true\n", "RULE_WORKFLOW", "check is required"),
     ("workflow:\n  steps:\n    - id: first\n      workflow: [other]\n", "RULE_WORKFLOW", "non-empty string"),
     ("workflow:\n  steps:\n    - id: first\n      workflow: absent\n", "RULE_WORKFLOW_NESTED", "absent"),
@@ -51,6 +52,14 @@ def test_sidecar_pointer_refusals(workflow_repo: Path, change: str) -> None:
         skill.write_text(skill.read_text().replace("corsia-format: '1'", "corsia-format: '2'"))
     with pytest.raises(ValidationError, match="RULE_SIDECAR_POINTER"):
         validate_repository(workflow_repo)
+
+
+def test_worker_block_accepted(workflow_repo: Path) -> None:
+    (workflow_repo / "skills/example/corsia.yaml").write_text(
+        "workflow:\n  worker:\n    effort: high\n    max_turns: 200\n    time_limit_minutes: 30\n"
+        "  steps:\n    - id: first\n      required: true\n      check: Done\n"
+    )
+    validate_repository(workflow_repo)
 
 
 def test_case_insensitive_sidecar_name(workflow_repo: Path) -> None:

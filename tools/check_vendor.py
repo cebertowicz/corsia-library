@@ -20,11 +20,11 @@ def main() -> int:
             raise ValueError(f"{name}: upstream hash differs from SOURCE.yaml")
         local = (VENDOR / name).read_bytes()
         if name == "skill_workflow_validation.py":
-            original = b"from core.workflow_result import schema_errors"
-            replacement = b"from .workflow_result import schema_errors"
-            if upstream.count(original) != 1:
-                raise ValueError(f"{name}: expected import not found exactly once")
-            upstream = upstream.replace(original, replacement)
+            for module in (b"workflow_result", b"workflow_worker"):
+                original = b"from core." + module + b" import"
+                if upstream.count(original) != 1:
+                    raise ValueError(f"{name}: expected import not found exactly once")
+                upstream = upstream.replace(original, b"from ." + module + b" import")
         if local != upstream:
             raise ValueError(f"{name}: vendored file differs from upstream")
         print(f"{name}: OK")
