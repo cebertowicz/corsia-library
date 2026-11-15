@@ -76,7 +76,7 @@ def test_a_deleted_staging_folder_is_pruned_and_the_same_place_reused(tmp_path, 
     sha = git(checkout, "rev-parse", "HEAD")
     dest = tmp_path / "staging" / "req" / "head"
     stage.add_head_worktree(checkout, sha, dest)
-    shutil.rmtree(tmp_path / "staging")  # what the backend does when the review settles
+    shutil.rmtree(tmp_path / "staging")  # what CORSIA does when the review settles
     stage.add_head_worktree(checkout, sha, tmp_path / "staging" / "other" / "head")
     listed = worktrees(checkout)
     assert len(listed) == 2 and not any(str(dest) in line for line in listed)

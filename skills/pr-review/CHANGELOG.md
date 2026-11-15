@@ -1,1 +1,1 @@
-1.0.0: First release.
+1.0.0: First release. Reviews each pull-request head against the repository's own standards; in live mode posts commit statuses, pull-request comments and replies, review-thread resolutions and one summary comment; fetches heads into the configured checkout.

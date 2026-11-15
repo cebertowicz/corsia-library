@@ -1,4 +1,4 @@
-"""LiveClient: today's reviewer's posts, made through ``corsia github api``, against a fake gh.
+"""LiveClient: the gate's live posts, made through ``corsia github api``, against a fake gh.
 
 The tests assert the GitHub calls and negative criteria: an outdated still-raised finding is re-posted rather than
 replied to, a thread is only resolved after its reply lands, only configured status contexts are
@@ -81,7 +81,7 @@ def failed(message, status=None):
 
 
 def threads_page(nodes, *, has_next=False, cursor=None, head=HEAD):
-    """One page of review_comment_fetch's GraphQL answer, in that module's response shape."""
+    """One page of GitHub's GraphQL review-thread answer."""
     return json.dumps({"data": {"repository": {"pullRequest": {
         "headRefOid": head,
         "reviewThreads": {"nodes": nodes, "pageInfo": {"hasNextPage": has_next, "endCursor": cursor}}}}}})
@@ -257,9 +257,8 @@ def test_thread_states_end_at_in_sources_guards():
             live._thread_states(REPO, PR)
 
 
-def test_a_blinked_history_read_is_reread_within_todays_budget(monkeypatch):
-    """Carried over unchanged: review_comment_fetch re-reads an unreadable comment history 8 times,
-    4s apart, because one brief GitHub error must not discard a finished review."""
+def test_a_blinked_history_read_is_reread_within_its_budget(monkeypatch):
+    """An unreadable comment history is re-read up to 8 times, 4s apart, because one brief GitHub error must not discard a finished review."""
     slept = []
     monkeypatch.setattr(publish.time, "sleep", slept.append)
     live, gh = client([failed("gh: blocked (HTTP 403)", 403), json.dumps([comment(1, finding_body())])])
@@ -380,7 +379,7 @@ def test_set_thread_resolved_sends_in_sources_mutation_and_verifies_the_answer()
                         "-f", "query=mutation($threadId: ID!) { resolveReviewThread(input: {threadId: $threadId}) "
                                 "{ thread { id isResolved } } }",
                         "-F", "threadId=PRRT_1"]]
-    assert [payload for _, payload in gh.calls] == [None]  # the -F flags carry it; in-source sends no body
+    assert [payload for _, payload in gh.calls] == [None]  # the -F flags carry it; no request body
     closed, _ = client(json.dumps({"data": {"unresolveReviewThread": {"thread": {"id": "PRRT_1", "isResolved": False}}}}))
     assert closed.set_thread_resolved(REPO, "PRRT_1", False) is True
 
@@ -573,7 +572,7 @@ def test_a_prior_with_nothing_to_cite_or_no_exact_sha_says_so():
     assert "finding commit is unavailable" in publish.cited_line_report(no_sha, HEAD, counting)
     same = publish.Prior("t", "f", "must_fix", None, False, False, "a.py", 2, 5, HEAD)
     assert publish.cited_line_report(same, HEAD, counting) == UNCHANGED.replace("aaaaaaaa", "bbbbbbbb")
-    assert called == []  # the same commit answers for itself: in-source compares nothing
+    assert called == []  # the same commit answers for itself: nothing is compared
 
 
 def test_a_silent_prior_is_replied_to_with_its_evidence_then_resolved():

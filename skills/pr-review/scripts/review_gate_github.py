@@ -1,9 +1,8 @@
 """Read-only GitHub access for rule-run scripts, through ``corsia github api``.
 
-CORSIA puts its ``corsia`` client on an approved authenticated script run's PATH
-(``automation/script_sandbox.py``). ``corsia github api <args>`` runs ``gh api`` as the
-agents' GitHub account and answers with its stdout, stderr and exit code. These scripts
-only read: every call is a GET.
+An authenticated CORSIA script run has the ``corsia`` client on its PATH.
+``corsia github api <args>`` runs ``gh api`` as the connected GitHub account and answers
+with its stdout, stderr and exit code. These scripts only read: every call is a GET.
 """
 from __future__ import annotations
 
@@ -12,6 +11,7 @@ import subprocess
 from typing import Any, Callable
 
 PAGE = 100
+MAX_PAGES = 50  # 5,000 items; a longer list is reported as unavailable, never truncated
 READ_TIMEOUT_S = 60
 
 
@@ -44,10 +44,9 @@ class Github:
         return json.loads(self.text(path) or "null")
 
     def pages(self, path: str) -> list[Any]:
-        """Every item of a list endpoint, ``per_page=100`` page by page."""
+        """Every item of a list endpoint, ``per_page=100`` page by page, up to ``MAX_PAGES``."""
         items: list[Any] = []
-        page = 1
-        while True:
+        for page in range(1, MAX_PAGES + 1):
             joiner = "&" if "?" in path else "?"
             batch = self.json(f"{path}{joiner}per_page={PAGE}&page={page}")
             if not isinstance(batch, list):
@@ -55,4 +54,4 @@ class Github:
             items.extend(batch)
             if len(batch) < PAGE:
                 return items
-            page += 1
+        raise GithubUnavailable(f"{path} has more than {MAX_PAGES * PAGE} items")

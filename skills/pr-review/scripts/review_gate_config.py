@@ -1,10 +1,9 @@
 """The review rule set's one configuration file, read by every rule-run script.
 
-A rule-started script gets no arguments (``automation.script_sandbox.script_command``),
-so each script reads ``rule-set.json`` beside the pack and resolves its state, staging
-and record folders under the owner's thread root, which holds this pack at
-``<thread root>/skills/pr-review/``. ``staging`` must be the owner's staging folder,
-the only one ``worker_inputs.staging_dir`` lets a worker read.
+A rule-started script gets no arguments, so each script reads ``rule-set.json`` beside
+the skill and resolves its state, staging and record folders under the owner's thread
+root, which holds this skill at ``<thread root>/skills/pr-review/``. ``staging`` must be
+the owner's staging folder, the only folder a confined worker may read its inputs from.
 """
 from __future__ import annotations
 

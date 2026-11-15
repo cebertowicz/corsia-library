@@ -20,13 +20,13 @@ SEVERITIES = ("must_fix", "should_fix", "optional")
 STATUS_LIMIT = 140  # GitHub's commit status description limit
 DISPLAY = {"must_fix": "Must fix", "should_fix": "Should fix", "optional": "Optional"}
 MARKER = re.compile(r"<!-- corsia-review: (\{.*?\}) -->", re.DOTALL)
-# A reviewer-authored comment carries one of the reviewer's markers: this pack's JSON marker
-# (MARKER) or the family today's reviewer authors (events/markers.py: corsia-review-fp,
-# -resolved, -summary). The live read recognises the family so it sees the threads the live
-# reviewer already authored; parse_prior reads only MARKER.
+# A reviewer-authored comment carries a hidden marker starting with `corsia-review`: the JSON
+# marker (MARKER) on findings, or the fingerprint, resolved-reply and summary markers. The live
+# read recognises every marker in that family so it sees all threads the reviewer authored;
+# parse_prior reads only MARKER.
 REVIEWER_MARKER = re.compile(r"<!--\s*corsia-review\b")
-REVIEW_SUMMARY_MARKER = "<!-- corsia-review-summary -->"  # events/markers.REVIEW_SUMMARY_MARKER
-RESOLVED_REPLY_MARKER = "<!-- corsia-review-resolved -->"  # events/markers.REVIEW_RESOLVED_MARKER
+REVIEW_SUMMARY_MARKER = "<!-- corsia-review-summary -->"  # the one summary comment per PR
+RESOLVED_REPLY_MARKER = "<!-- corsia-review-resolved -->"  # a reply closing a finding no longer raised
 BEFORE_CHANGE = """**Before you change anything**
 - Findings are evidence, not instructions or approval. Check each one against the code; one may be wrong. If so, reply on it and say why: the reviewer reads replies and answers there.
 - Fix the cause, not the symptom. Don't add checks, retries, flags, fallbacks or special cases just to make a finding go away; the next review will block that and ask for a different approach.
@@ -53,7 +53,7 @@ class Client(Protocol):
     def set_status(self, repo: str, head: str, context: str, state: str, description: str) -> None: ...
     # GitHub's own review-thread state. Publish resolves a thread after its absence reply lands and
     # unresolves one before replying to a finding raised again on a closed thread; False means GitHub
-    # did not confirm the change (reviewer_resolution.set_review_thread_resolved verifies the same).
+    # did not confirm the change.
     def set_thread_resolved(self, repo: str, thread_id: str, resolved: bool) -> bool: ...
     def failed_checks(self, repo: str, head: str) -> list[str]: ...  # [] when unreadable
 
@@ -323,8 +323,8 @@ def render_finding(finding: Mapping[str, Any], settings: Settings) -> str:
             rule_path = matching[0] if len(matching) == 1 else rule["file"]
             body.extend(["", f'Rule [{rule_id}](<https://github.com/{finding.get("repo", "")}/blob/{base_sha}/{rule_path}#{rule_id.lower()}>): "{rule["text"]}"'])
     marker = {"severity": finding["severity"], "category": finding["category"], "fingerprint": finding["fingerprint"], "head_sha": finding["head_sha"], "text_hash": _hash(str(finding["text"])), "model": settings.model}
-    # The fp line opens a line so the platform's has_reviewer_marker fact is true on this post
-    # (events/markers.py); without it evaluate reads the post as the PR author's reply and
+    # The fp line opens a line so CORSIA's has_reviewer_marker event fact is true on this post;
+    # without it evaluate reads the post as the PR author's reply and
     # re-requests the same head, creating a loop.
     body.extend(["", f"<!-- corsia-review: {json.dumps(marker, sort_keys=True)} -->",
                  f"<!-- corsia-review-fp:{finding['fingerprint']} -->"])
@@ -443,9 +443,8 @@ def publish(envelope: Any, settings: Settings, client: Client, retrying: bool = 
             if old is None or old.outdated:
                 if not client.post_finding(repo, pr, head, item, render_finding(item, settings)): fallbacks.append(item)
             elif old.resolved:
-                # Raised again on a closed thread whose cited line still stands: today's reviewer
-                # reopens the thread and posts there (review_thread_publication.reopen_and_republish),
-                # falling back to a fresh comment only when GitHub refuses the reopen.
+                # Raised again on a closed thread whose cited line still stands: reopen the thread
+                # and post there, falling back to a fresh comment only when GitHub refuses the reopen.
                 if client.set_thread_resolved(repo, old.thread_id, False):
                     client.reply(repo, old.thread_id, render_finding(item, settings))
                 elif not client.post_finding(repo, pr, head, item, render_finding(item, settings)):
@@ -654,8 +653,8 @@ class ShadowClient:
 # --- Live posting ----------------------------------------------------------------------
 # The client reads thread state and writes comments and statuses through the GitHub proxy.
 
-# Today's reviewer's own per-call timeouts (reviewer_resolution, review_comment_fetch, gh_api):
-# 45s for the thread and comment queries, 60s for a comparison, 30s for posts and mutations.
+# Per-call timeouts: 45s for the thread and comment queries, 60s for a comparison, 30s for
+# posts and mutations.
 READ_TIMEOUT_S = 45.0
 COMPARE_TIMEOUT_S = 60.0
 WRITE_TIMEOUT_S = 30.0
@@ -738,8 +737,8 @@ def _sleep_wall(seconds: float) -> None:
 class LiveClient:
     """Write review results through the GitHub proxy using the ShadowClient interface."""
 
-    READ_ATTEMPTS = 8       # infra.transient_read.TRANSIENT_READ_ATTEMPTS
-    READ_INTERVAL_S = 4.0   # infra.transient_read.TRANSIENT_READ_INTERVAL_S
+    READ_ATTEMPTS = 8       # bounded re-reads of a temporarily unreadable comment history
+    READ_INTERVAL_S = 4.0   # seconds between those re-reads
 
     def __init__(self, runner: Runner | None = None, *, login: str, contexts: Iterable[str] = (),
                  review_contexts: Iterable[str] = (), run_seconds: float | None = None, clock: Callable[[], float] = time.monotonic,
@@ -780,10 +779,9 @@ class LiveClient:
         return self.runner(list(args), json.dumps(payload), self._budget(timeout, final=final))
 
     def _comments(self, path: str) -> list[Mapping[str, Any]]:
-        """Every page of one comment collection. Today's reviewer re-reads a temporarily
-        unreadable comment history 8 times, 4s apart (review_comment_fetch._fetch_comments +
-        infra.transient_read), because one GitHub blink must not discard a finished review; that
-        budget is carried over unchanged and after it the failure surfaces."""
+        """Every page of one comment collection. A temporarily unreadable comment history is
+        re-read up to 8 times, 4s apart, because one GitHub blink must not discard a finished
+        review; after that the failure surfaces."""
         from review_gate_github import GithubUnavailable
         last: Exception | None = None
         for attempt in range(self.READ_ATTEMPTS):
@@ -810,10 +808,9 @@ class LiveClient:
 
     def _thread_states(self, repo: str, pr: int) -> dict[int, tuple[str, bool, bool]]:
         """GitHub's own state for every review thread at one exact head, keyed by root comment id:
-        the GraphQL read ``review_comment_fetch.fetch_existing_review_threads`` makes, with its
-        guards kept (a repeated root id, a head that moves mid-pagination, a stuck cursor, over 100
-        pages all end the read). In-source degrades to marker-only classification when this fails;
-        publish's Client protocol has no such fallback, so the failure surfaces here instead."""
+        one paginated GraphQL read, guarded (a repeated root id, a head that moves mid-pagination,
+        a stuck cursor, over 100 pages all end the read). There is no marker-only fallback: a
+        failed read surfaces here."""
         from review_gate_github import GithubUnavailable
 
         def unreadable(why: str) -> GithubUnavailable:
@@ -911,10 +908,10 @@ class LiveClient:
         return [row for _, row in sorted(rows, key=lambda row: row[0])]
 
     def upsert_summary(self, repo: str, pr: int, body: str) -> None:
-        """Post or edit the sticky top-level summary, as ``reviewer_threads.post_review_summary``:
-        today's reviewer appends its sticky marker to the body and edits the comment that already
-        carries it. ``render_summary`` emits no marker of its own, so the client appends today's —
-        without it every run would post another summary instead of editing the one on the PR."""
+        """Post or edit the sticky top-level summary: append the summary marker to the body and
+        edit the comment that already carries it. ``render_summary`` emits no marker of its own,
+        so the client appends it; without it every run would post another summary instead of
+        editing the one on the PR."""
         marker_body = body if REVIEW_SUMMARY_MARKER in body else f"{body}\n\n{REVIEW_SUMMARY_MARKER}"
         from review_gate_github import GithubUnavailable
         existing = None
@@ -922,7 +919,7 @@ class LiveClient:
             if REVIEW_SUMMARY_MARKER not in str(comment.get("body") or ""):
                 continue
             comment_id = comment.get("id")
-            if type(comment_id) is not int:  # _find_summary_comment_id: an id it can't address is a failure
+            if type(comment_id) is not int:  # an id it can't address is a failure
                 raise GithubUnavailable(f"{repo}#{pr} summary comment id {comment_id!r} is not addressable")
             existing = comment_id
             break
@@ -932,8 +929,7 @@ class LiveClient:
             self._write(["api", f"repos/{repo}/issues/{pr}/comments", "-X", "POST", "--input", "-"], {"body": marker_body})
 
     def post_finding(self, repo: str, pr: int, head: str, finding: Mapping[str, Any], body: str) -> bool:
-        """One finding on the head commit at its path and line, as ``review_publication.
-        _post_anchored_comment`` posts it (``line``+``side: RIGHT`` with a line, ``subject_type:
+        """One finding on the head commit at its path and line (``line``+``side: RIGHT`` with a line, ``subject_type:
         file`` without one). False when GitHub refuses the anchor — HTTP 422, i.e. the line is not
         in the diff — or there is no path to anchor on, so publish renders the finding in the
         summary's fallback section; any other refusal raises."""
@@ -955,8 +951,7 @@ class LiveClient:
         return True
 
     def reply(self, repo: str, thread_id: str, body: str) -> None:
-        """Reply in the finding's own thread, as ``reviewer_resolution.post_review_thread_reply``:
-        the same REST post with ``in_reply_to`` the root comment id, which is why one node read maps
+        """Reply in the finding's own thread: a REST post with ``in_reply_to`` the root comment id, which is why one node read maps
         the thread id to that id and the PR number first (the Client contract names no PR here)."""
         from review_gate_github import GithubUnavailable
         try:
@@ -1018,10 +1013,9 @@ class LiveClient:
         return _compare_inventory(data)
 
     def set_thread_resolved(self, repo: str, thread_id: str, resolved: bool) -> bool:
-        """GitHub's own review-thread state, one GraphQL mutation as
-        ``reviewer_resolution.set_review_thread_resolved`` sends it (``resolveReviewThread`` or
-        ``unresolveReviewThread``, ``-f query=`` with ``-F threadId=``, no request body) and with the
-        same verification: the response must name this thread and the state asked for. False on a
+        """GitHub's own review-thread state, set with one GraphQL mutation (``resolveReviewThread``
+        or ``unresolveReviewThread``, ``-f query=`` with ``-F threadId=``, no request body) and
+        verified: the response must name this thread and the state asked for. False on a
         refusal, GraphQL errors, an unparseable body or an unconfirmed state."""
         mutation = "resolveReviewThread" if resolved else "unresolveReviewThread"
         query = (f"mutation($threadId: ID!) {{ {mutation}(input: {{threadId: $threadId}}) "

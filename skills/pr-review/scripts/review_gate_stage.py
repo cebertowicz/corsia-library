@@ -146,10 +146,10 @@ def _has_commit(checkout: Path, sha: str) -> bool:
 def add_head_worktree(checkout: Path, sha: str, dest: Path) -> None:
     """Check ``sha`` out at ``dest`` as a detached worktree of ``checkout``.
 
-    Stale entries are pruned first: the backend deletes a staged folder when its review
+    Stale entries are pruned first: CORSIA deletes a staged folder when its review
     settles, which leaves the worktree's record in the checkout until the next prune. A
-    commit the checkout lacks is fetched from ``origin`` by SHA, as CORSIA's former reviewer did
-    (fork heads included: GitHub serves any commit a pull request's ref reaches).
+    commit the checkout lacks is fetched from ``origin`` by SHA (fork heads included: GitHub
+    serves any commit a pull request's ref reaches).
     """
     _git(checkout, "worktree", "prune")
     if not _has_commit(checkout, sha):

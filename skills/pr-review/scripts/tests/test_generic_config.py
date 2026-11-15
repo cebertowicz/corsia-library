@@ -53,3 +53,18 @@ def test_optional_extended_base_selects_exactly_one_worker_rule():
     starts = [r for r in config.configured_rules(cfg) if r['action'] == 'start_worker']
     assert len(starts) == 2
     assert {(m['op'], m['value']) for r in starts for m in r['match'] if m['field'] == 'base_ref'} == {('eq', 'release'), ('not_eq', 'release')}
+
+
+def test_pages_stops_at_its_bound_and_reports_the_list_unavailable():
+    import pytest
+    import review_gate_github as gh
+    calls = []
+
+    def reader(args):
+        calls.append(args[0])
+        assert len(calls) <= gh.MAX_PAGES, 'read past the page bound'
+        return '[' + ','.join(['{}'] * gh.PAGE) + ']'  # every page full: the list never ends
+
+    with pytest.raises(gh.GithubUnavailable):
+        gh.Github(reader).pages('repos/example-org/example-repo/pulls')
+    assert len(calls) == gh.MAX_PAGES
