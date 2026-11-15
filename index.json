@@ -493,6 +493,132 @@
       "withdrawn_reason": null
     },
     {
+      "name": "pr-review",
+      "description": "Install and operate an automated pull-request review gate using repository standards and a confined review worker.",
+      "type": "skill-md",
+      "url": "skills/pr-review/SKILL.md",
+      "digest": "sha256:26ace942412ef17677d97009d473fa3429570d3d5563074d8dcc4e3c75ac72f9",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:49ce624fdaea7dd1febbfebc6b7f32f4d84e3b979e301e4f2dcf787dfa1c4a06"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:26ace942412ef17677d97009d473fa3429570d3d5563074d8dcc4e3c75ac72f9"
+        },
+        {
+          "path": "corsia.yaml",
+          "sha256": "sha256:6d45131384697cf707dac7bf3e295140d103285dd2b19e51a42ec9c7258403e8"
+        },
+        {
+          "path": "measures.yaml",
+          "sha256": "sha256:ae86dfc9d22bbcf81055a82c537fdf83da4e5645c2d2a39a5673d0590dbdf0ad"
+        },
+        {
+          "path": "references/review-standards.md",
+          "sha256": "sha256:8885aab9ad8fbab39cf45e22b7753a53670fa209517cb3e4c4c1a4f992551704"
+        },
+        {
+          "path": "rule-set.json",
+          "sha256": "sha256:76bcd88276a88c6d3e2bfefc5a4a9083a2e67fa53fa79fabbb604480e734c66b"
+        },
+        {
+          "path": "scripts/review_gate_config.py",
+          "sha256": "sha256:408b1c914f9064a0c5bdf191ad21b378651bbd2ebdf4f4e9a3ebc71b55aaa753"
+        },
+        {
+          "path": "scripts/review_gate_evaluate.py",
+          "sha256": "sha256:bd0be468cf37b3117018e4a1edeac48d6a845c90eb0eb1b1947bc43fcb83eb65"
+        },
+        {
+          "path": "scripts/review_gate_github.py",
+          "sha256": "sha256:2f4c634a21446655e2ee22756340076ee0db5d3713af8e09f3e9e1993a6ca3d5"
+        },
+        {
+          "path": "scripts/review_gate_publish.py",
+          "sha256": "sha256:c37822cae489e844b7261a48c7075942056dcb21f2119a3decf62f21dfa722b1"
+        },
+        {
+          "path": "scripts/review_gate_stage.py",
+          "sha256": "sha256:4df5dbd8d56e00e5020f45cfaf35bd0edcafd1e15063005d23fea821f7cd9be6"
+        },
+        {
+          "path": "scripts/tests/test_generic_config.py",
+          "sha256": "sha256:cc1fa72ebd5909f32b11b718d1a3327fccee625e216161997c14aa47d9ca8dcd"
+        },
+        {
+          "path": "scripts/tests/test_review_gate_evaluate.py",
+          "sha256": "sha256:3b2de3266baac5c16c50fd581593770691054c9e1ec377487d329fe8c9700b70"
+        },
+        {
+          "path": "scripts/tests/test_review_gate_head_worktree.py",
+          "sha256": "sha256:6350afad2ddeca111260be8cb9711aa6db67e2fb9f815eaf903b0960891b4a53"
+        },
+        {
+          "path": "scripts/tests/test_review_gate_live_client.py",
+          "sha256": "sha256:cb243e535989d3a91ccf08a0608217bffe45d45695edb90c64517284af32ab80"
+        },
+        {
+          "path": "scripts/tests/test_review_gate_publish.py",
+          "sha256": "sha256:84fce6293a357bc359084b5dd1254e7104875b2a74762842a73729b8fb8a3b51"
+        },
+        {
+          "path": "scripts/tests/test_review_gate_rule_runs.py",
+          "sha256": "sha256:fab350e088ccc1a2e88f849677086742e899936504113e55142afeac1ec7054a"
+        },
+        {
+          "path": "scripts/tests/test_review_gate_timed.py",
+          "sha256": "sha256:de48f9449b4a00822bfbf6575ea989672bb76e7605e90cf7e64850c2d0e3f393"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/pr-review",
+        "commit": "9712564ab08644b0e2e769b7d1e3e097dcb64676"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
+      "name": "pr-reviewer",
+      "description": "Rule-started review worker for one pull-request head. Reads only its staged inputs and returns one JSON result for publish. Not for interactive use.",
+      "type": "skill-md",
+      "url": "skills/pr-reviewer/SKILL.md",
+      "digest": "sha256:ba671cb7643e7986e55d46e7d46412b1bf2ec4567903d6d79322ccaa5d0cc8b4",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:77ed77aac8fbed1b0a3d95b7c870c92b11ee5c86da117310de1acc592520c9fa"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:ba671cb7643e7986e55d46e7d46412b1bf2ec4567903d6d79322ccaa5d0cc8b4"
+        },
+        {
+          "path": "corsia.yaml",
+          "sha256": "sha256:477c80e5d23ef80b26eee26ba1b49753b65289f30331f4bffcf6088f7199cad8"
+        },
+        {
+          "path": "measures.yaml",
+          "sha256": "sha256:8cbc4c435ad7f2b58395e613da93d96bb127cd433e695f05a11d76ff3647a373"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/pr-reviewer",
+        "commit": "9712564ab08644b0e2e769b7d1e3e097dcb64676"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null
+    },
+    {
       "name": "product-design",
       "description": "Steps for recurring product requirements and design work, including a design-only deliverable before anything is built: ground the current experience, record requirements, verify human and agent journeys, resolve required approvals, and hand off the exact design. Not for already-specified small fixes or implementation. No test results yet.",
       "type": "skill-md",

@@ -104,3 +104,11 @@ own_pins:
     repo: cebertowicz/corsia-library
     path: skills/inbox-triage
     commit: "a6432f74e8a5e46f6fa78258c342b01df786740a"
+  - name: pr-review
+    repo: cebertowicz/corsia-library
+    path: skills/pr-review
+    commit: "9712564ab08644b0e2e769b7d1e3e097dcb64676"
+  - name: pr-reviewer
+    repo: cebertowicz/corsia-library
+    path: skills/pr-reviewer
+    commit: "9712564ab08644b0e2e769b7d1e3e097dcb64676"
