@@ -5,7 +5,7 @@ license: Apache-2.0
 metadata:
   corsia-data: corsia.yaml
   corsia-format: "1"
-  version: "1.0.1"
+  version: "1.0.2"
 ---
 
 # Pull-request review gate
@@ -30,12 +30,12 @@ The gate evaluates each pull-request head, stages its diff, conversation and sta
 
 ## Set up
 
-1. Install this skill and `pr-reviewer` into the owning agent's thread, and connect GitHub with an account allowed to write commit statuses and pull-request comments.
+1. Install this skill and `pr-reviewer` into the owning agent's thread, and connect GitHub with an account allowed to write commit statuses and pull-request comments. The owning agent must be in a project that tracks each reviewed repository: register that repository's local checkout with `project_repo_register`. A rule that names a repository the project doesn't track is refused.
 2. Commit `references/review-standards.md` to the reviewed repository at the path listed in `rule-set.json` under `standards`; edit it to suit that repository.
 3. Set `repos`, `repo_checkouts`, `agents_login`, optional `sme`, standards paths, status contexts and other settings in `rule-set.json`. Leave `mode` as `shadow`. Set `extended_window_base` only if you configure the corresponding worker profile.
 4. Register each of the evaluate, stage and publish scripts with `automation_schedule`: kind `script`, no cadence, authenticated, timeout 300 seconds. Name exactly what each writes in its purpose: evaluate writes local state and emits events; stage writes local state, staged inputs and a detached worktree, and emits events; publish writes local state and shadow records, or in live mode commit statuses, pull-request comments and replies, review-thread resolution, and its own summary comment, and emits events.
-5. Resolve the event rules with `review_gate_config.configured_rules(review_gate_config.load())`, then create each with `event_rules create`, substituting `$repos` and the registered script IDs. For an extended-window base, configure the named worker profile. The start rule uses `start_worker` with the worker skill and `request_identity` fact.
-6. Run `measure_sync` for both skills' `measures.yaml` files and confirm the result with `measure_status`.
+5. Run `measure_sync` for both skills' `measures.yaml` files and confirm the result with `measure_status`. This declares the `qa` events that some rules in step 6 match, so it comes first.
+6. Resolve the event rules with `review_gate_config.configured_rules(review_gate_config.load())`, then create each with `event_rules create`, substituting `$repos` and the registered script IDs. For an extended-window base, configure the named worker profile. The start rule uses `start_worker` with the worker skill and `request_identity` fact.
 7. Run in shadow mode on a few pull requests and show the person the results. Switching to live mode posts on their repository: ask them, and switch only on their explicit yes. Then re-register the scripts and rules.
 8. If a head has no verdict, first check the current head and existing events to avoid a duplicate review. Under `review_gate_evaluate.StateStore.transaction()`, clear that PR's `in_flight` claim; if it was marked reviewed without a published verdict, also clear `reviewed` and `mergeability`. Preserve the number of attempts already used as `attempts` = `{"head": <head>, "n": <used>}` using `put`. Re-firing a completed check run for that head is an action on the person's repository: ask them first. Once it re-fires, evaluate requests the next attempt. Verify the verdict on that exact head; do not reset the attempt to zero, which reuses an already-consumed request identity.
 
