@@ -1,6 +1,7 @@
 repository: https://github.com/cebertowicz/corsia
-commit: 0e4581cff7d486e1aff20a893660f2836d1ec20e
+commit: e5dbd2fe2ccef7c887ece4061b8b25486eccbf1a
 files:
-  skill_workflow_validation.py: 82b008f68179f8f86acf4fc358b8762cfa3e295121d40d82dae14457c22d1dd8
-  workflow_result.py: a0d7cda564b54798ee715eec8997c061cac23bdfc2827c9279480e91059ce0e8
-edit: 'skill_workflow_validation.py: change core.workflow_result import to .workflow_result'
+  skill_workflow_validation.py: 52bb144f55c51e7062494a1ba083db026a2031a45942efc501341d52e9e41c62
+  workflow_result.py: 1f373857203ca99696b9eb6a59f2258f30135719a3315252b7fc431fa11ceb70
+  workflow_worker.py: 394cea9a2f01491b25822975ca1fe434d3a195d6d4914b97a1ecc9fa773437dc
+edit: 'skill_workflow_validation.py: change core.workflow_result and core.workflow_worker imports to relative imports'
