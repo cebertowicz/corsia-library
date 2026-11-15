@@ -1,0 +1,28 @@
+workflow:
+  steps:
+  - id: trigger
+    title: Exact head checks green
+    required: true
+    check: every non-reviewer check on the head completed green, or the head is skipped
+      with a terminal reason
+  - id: context
+    title: Prompt and standards assembled
+    required: true
+    after:
+    - trigger
+    check: prompt rendered from the template with the resolved standards contracts;
+      reviewer_version computed from them
+  - id: review
+    title: Review run on the selected model
+    required: true
+    after:
+    - context
+    check: one terminal verdict (pass, block, stop or error) for the exact head
+    workflow: pr-reviewer
+  - id: publish
+    title: Verdict and presence published
+    required: true
+    after:
+    - review
+    check: configured verdict and presence contexts are posted at the exact head;
+      verdict event carries reviewer_version

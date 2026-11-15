@@ -1,0 +1,49 @@
+schema: corsia.measures/1
+namespace: reviewer
+workflow: pr-reviewer
+events:
+  reviewer.verdict:
+    use: route
+    event_class: actionable
+    attributes:
+      repo: id
+      pr_number: count
+      head_sha: id
+      verdict:
+        enum:
+        - clean
+        - code_fail
+      required_action:
+        enum:
+        - none
+        - approach_reset
+      block_count: count
+      flag_count: count
+      nit_count: count
+      finding_count: count
+      model: id
+      reviewer_version: id
+      reviewer_standards: id
+    dedupe:
+    - repo
+    - pr_number
+    - head_sha
+    - reviewer_version
+  reviewer.terminal_error:
+    use: route
+    event_class: actionable
+    attributes:
+      repo: id
+      pr_number: count
+      head_sha: id
+      reason:
+        enum:
+        - no_verdict_after_retries
+        - mergeability_unresolved
+        - not_published_after_retries
+        - not_staged_after_retries
+    dedupe:
+    - repo
+    - pr_number
+    - head_sha
+    - reason

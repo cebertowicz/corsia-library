@@ -1,0 +1,130 @@
+workflow:
+  worker:
+    effort: high
+    max_turns: 200
+    time_limit_minutes: 30
+  result:
+    type: object
+    additionalProperties: false
+    required:
+    - verdict
+    - findings
+    properties:
+      verdict:
+        type: string
+        enum:
+        - pass
+        - findings
+        - stop
+      findings:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - severity
+          - category
+          - text
+          - path
+          - line
+          properties:
+            severity:
+              type: string
+              enum:
+              - must_fix
+              - should_fix
+              - optional
+            category:
+              type: string
+              enum:
+              - architecture/subsystem-conflict
+              - architecture/dependency-cycle
+              - test-gap/missing-unit
+              - test-gap/missing-integration
+              - test-gap/missing-edge-case
+              - naming/convention
+              - naming/misleading
+              - security/secret-exposure
+              - security/path-traversal
+              - security/injection
+              - security/auth-bypass
+              - security/permission-boundary
+              - performance/n-plus-one
+              - performance/blocking-in-async
+              - performance/memory-pressure
+              - correctness/logic-error
+              - correctness/race-condition
+              - correctness/silent-error
+              - style/readability
+              - style/dead-code
+              - review-process/approach-churn
+              - standards/rule
+              - requirements/missing
+              - requirements/drift
+              - requirements/scope-creep
+            text:
+              type: string
+            path:
+              type: string
+            line:
+              type: integer
+            rule_id:
+              type: string
+      replies:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - thread_id
+          - outcome
+          - evidence
+          properties:
+            thread_id:
+              type: string
+            fingerprint:
+              type: string
+            outcome:
+              type: string
+              enum:
+              - dropped
+              - still_open
+            evidence:
+              type: string
+      product_decision:
+        type: string
+      shared_cause:
+        type: string
+      sme_dispute:
+        type: object
+        additionalProperties: false
+        required:
+        - thread_id
+        - author
+        - review
+        - severity
+        properties:
+          thread_id:
+            type: string
+          author:
+            type: string
+          review:
+            type: string
+          severity:
+            type: string
+            enum:
+            - must_fix
+            - should_fix
+            - optional
+  steps:
+  - id: read
+    title: Staged inputs read
+    required: true
+    check: the diff, every standards file, the PR and its whole conversation were
+      read from the staging folder
+  - id: review
+    title: One result for the exact head
+    required: true
+    after:
+    - read
+    check: one JSON result matching the schema, for the staged head only
