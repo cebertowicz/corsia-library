@@ -1,0 +1,406 @@
+schema: corsia.measures/1
+namespace: qa
+workflow: pr-review
+version_attr: reviewer_version
+events:
+  qa.review.completed:
+    attributes:
+      pr: id
+      head_sha: id
+      model: id
+      reviewer_version: id
+      verdict:
+        enum:
+        - pass
+        - block
+        - findings
+        - stop
+        - error
+      blocks: count
+      flags: count
+      cost_usd: num
+      worker_thread: id
+    dedupe:
+    - pr
+    - head_sha
+    - run_id
+    corroborate: plan_node
+  qa.review.skipped:
+    attributes:
+      pr: id
+      head_sha: id
+      reason:
+        enum:
+        - override
+        - draft
+        - fork_unapproved
+        - superseded
+        - paused
+    dedupe:
+    - pr
+    - head_sha
+    - reason
+  qa.review.finding:
+    attributes:
+      pr: id
+      head_sha: id
+      finding: id
+      severity:
+        enum:
+        - must_fix
+        - should_fix
+        - optional
+      category: id
+      rule_id: id
+    dedupe:
+    - run_id
+    - finding
+  qa.audit.label:
+    attributes:
+      finding: id
+      label:
+        enum:
+        - correct_block
+        - over_block
+        - correct_pass
+        - missed_defect
+        - undeterminable
+      severity:
+        enum:
+        - low
+        - medium
+        - high
+    dedupe:
+    - run_id
+    - finding
+  qa.escape.found:
+    attributes:
+      pr: id
+      merge_sha: id
+      head_sha: id
+      defect: id
+      severity:
+        enum:
+        - low
+        - medium
+        - high
+      found_by:
+        enum:
+        - audit
+        - user
+        - agent
+        - ci
+    dedupe:
+    - merge_sha
+    - defect
+    corroborate:
+      platform_event:
+        event: github.issue.opened
+        true: defect
+  qa.review_stage_requested:
+    use: route
+    default_delivery: none
+    attributes:
+      repo: id
+      pr: count
+      head_sha: id
+      attempt: count
+      request_identity: id
+      mode:
+        enum:
+        - default
+        - local
+    dedupe:
+    - request_identity
+  qa.review_requested:
+    use: route
+    default_delivery: none
+    attributes:
+      repo: id
+      pr: count
+      head_sha: id
+      attempt: count
+      request_identity: id
+      staging_path: id
+      base_ref: id
+      mode:
+        enum:
+        - default
+        - local
+    dedupe:
+    - request_identity
+  qa.review_status:
+    use: route
+    default_delivery: none
+    attributes:
+      repo: id
+      pr: count
+      head_sha: id
+      attempt: count
+      base_ref: id
+      state:
+        enum:
+        - safety_check
+        - held
+        - waiting_checks
+        - checks_failed
+        - conflicts
+        - maintainer_checks
+        - requested
+        - skipped
+    dedupe:
+    - repo
+    - pr
+    - head_sha
+    - state
+    - attempt
+  qa.review_needs_turn:
+    use: route
+    default_delivery: none
+    attributes:
+      reason: id
+      repo: id
+      pr: count
+      head_sha: id
+    dedupe:
+    - reason
+    - repo
+    - pr
+    - head_sha
+kpis:
+  block_precision:
+    title: Block precision
+    unit: percent
+    better: higher
+    formula: ratio
+    num:
+      event: qa.audit.label
+      where:
+        label: correct_block
+      match:
+      - event: qa.review.completed
+        true: run_id
+        mode: exists
+        anchor: true
+    den:
+      event: qa.audit.label
+      where:
+        label:
+        - correct_block
+        - over_block
+      match:
+      - event: qa.review.completed
+        true: run_id
+        mode: exists
+        anchor: true
+    coverage:
+      of:
+        event: qa.review.completed
+        where:
+          verdict:
+          - block
+          - findings
+          - stop
+      by: run_id
+    target: 0.9
+    review: 0.85
+    min_n: 20
+    settle_days: 3
+    alert: wake
+    can_decide: true
+  escapes:
+    title: Medium and high escapes
+    unit: count
+    better: lower
+    formula: count
+    num:
+      event: qa.escape.found
+      where:
+        severity:
+        - medium
+        - high
+    coverage:
+      of:
+        event: qa.review.completed
+      by: run_id
+      labelled:
+        event: qa.audit.label
+    target: 0
+    review: 0
+    min_n: 1
+    alert: wake
+  escapes_by_version:
+    title: Escape rate by reviewer version
+    unit: percent
+    better: lower
+    formula: ratio
+    num:
+      event: qa.escape.found
+      where:
+        severity:
+        - medium
+        - high
+      match:
+      - event: qa.review.completed
+        true: run_id
+        mode: exists
+        anchor: true
+    den:
+      event: qa.review.completed
+      where:
+        verdict:
+        - pass
+        - block
+        - findings
+        - stop
+      distinct: head_sha
+    target: 0
+    review: 0.02
+    min_n: 20
+    settle_days: 14
+    alert: false
+    can_decide: true
+  one_review_per_head:
+    title: Heads with exactly one review
+    unit: percent
+    better: higher
+    formula: ratio
+    num:
+      event: github.check_suite.completed
+      where:
+        app: github-actions
+      distinct: head_sha
+      match:
+      - event: qa.review.completed
+        true: head_sha
+        mode: exactly_one
+      - event: qa.review.skipped
+        true: head_sha
+        mode: absent
+      - event: github.check_suite.completed
+        true: head_sha
+        mode: absent
+        where:
+          conclusion:
+          - failure
+          - cancelled
+          - timed_out
+    den:
+      event: github.check_suite.completed
+      where:
+        app: github-actions
+      distinct: head_sha
+      match:
+      - event: qa.review.skipped
+        true: head_sha
+        mode: absent
+      - event: github.check_suite.completed
+        true: head_sha
+        mode: absent
+        where:
+          conclusion:
+          - failure
+          - cancelled
+          - timed_out
+    target: 1.0
+    review: 0.98
+    min_n: 25
+    alert: false
+  review_cost_per_pr:
+    title: Review cost per PR
+    unit: usd
+    better: lower
+    formula: ratio
+    can_decide: true
+    decides_as: spend
+    num:
+      event: qa.review.completed
+      cost_of: worker_thread
+    den:
+      event: qa.review.completed
+      distinct: pr
+    target: 0.5
+    review: 0.75
+    min_n: 20
+    alert: false
+  push_churn:
+    title: CI-triggered pushes per merged PR
+    unit: ratio
+    better: lower
+    formula: ratio
+    num:
+      event:
+      - github.pr.opened
+      - github.pr.pushed
+      match:
+      - event: github.check_suite.completed
+        true: head_sha
+        mode: exists
+        where:
+          app: github-actions
+      - event: github.pr.merged
+        true: subject
+        mode: exists
+        anchor: true
+    den:
+      event: github.pr.merged
+    target: 2.64
+    review: 3.0
+    min_n: 20
+    alert: digest
+views:
+- id: precision
+  chart: number
+  y: kpi.block_precision
+  headline: true
+- id: precision_by_version
+  chart: bars
+  x: version
+  y: kpi.block_precision
+  title: Block precision by version
+  target_line: true
+- id: precision_trend
+  chart: bars
+  x: time
+  y: kpi.block_precision
+  title: Block precision
+  target_line: true
+- id: verdict_mix
+  chart: stacked_share
+  x: version
+  y: count.qa.review.completed
+  series: verdict
+  title: Verdicts by version
+- id: versions
+  chart: table
+  rows: version
+  columns:
+  - kpi.block_precision
+  - kpi.escapes_by_version
+  - kpi.review_cost_per_pr
+  title: Version comparison (shown only after a verdict)
+- id: review_cost
+  chart: bars
+  x: version
+  y: kpi.review_cost_per_pr
+  title: Review cost per PR by version
+- id: one_review
+  chart: bars
+  x: time
+  y: kpi.one_review_per_head
+  target_line: true
+  title: Heads with exactly one review
+- id: one_review_now
+  chart: number
+  y: kpi.one_review_per_head
+  headline: true
+- id: review_cost_now
+  chart: number
+  y: kpi.review_cost_per_pr
+  headline: true
+- id: churn
+  chart: bars
+  x: time
+  y: kpi.push_churn
+  target_line: true
+  title: CI-triggered pushes per merged PR
