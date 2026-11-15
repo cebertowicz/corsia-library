@@ -497,18 +497,18 @@
       "description": "Install and operate an automated pull-request review gate using repository standards and a confined review worker.",
       "type": "skill-md",
       "url": "skills/pr-review/SKILL.md",
-      "digest": "sha256:929cb62c33b0063165c7733c1cd3f8ff6e31a305637ea0d71aed1b0d2d06ed80",
-      "version": "1.0.2",
+      "digest": "sha256:8b34bd64cecf12febc0327550ba034c5b4bc8eb74320386e67e0ad1f07fa6ccb",
+      "version": "1.0.3",
       "kind": "skill",
       "license": "Apache-2.0",
       "files": [
         {
           "path": "CHANGELOG.md",
-          "sha256": "sha256:2ff998c17fc2b4bee498b6fb67b5c92c86ac8bc1868ee4d83cd24cec0d274e6b"
+          "sha256": "sha256:0e41dde957ff5fff0d4af644074c3fc38e8b5ae8fbaa93fcdac9269100c99efd"
         },
         {
           "path": "SKILL.md",
-          "sha256": "sha256:929cb62c33b0063165c7733c1cd3f8ff6e31a305637ea0d71aed1b0d2d06ed80"
+          "sha256": "sha256:8b34bd64cecf12febc0327550ba034c5b4bc8eb74320386e67e0ad1f07fa6ccb"
         },
         {
           "path": "corsia.yaml",
@@ -582,7 +582,7 @@
       "source": {
         "repository": "cebertowicz/corsia-library",
         "path": "skills/pr-review",
-        "commit": "4ff2a6ca0a617fb24249cc097baa2e53a357aad7"
+        "commit": "7b53bcda0eec17634ea61c53dea6c755fc5f84bb"
       },
       "withdrawn": false,
       "withdrawn_reason": null
