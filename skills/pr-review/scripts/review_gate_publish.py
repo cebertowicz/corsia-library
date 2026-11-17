@@ -44,8 +44,8 @@ class Client(Protocol):
     # omitting them would re-send that reply on every run.
     def list_reviewer_findings(self, repo: str, pr: int) -> list[Mapping[str, Any]]: ...
     # The evidence sentence for one absent prior finding: whether the lines it cited changed between
-    # the commit it was raised on and the head being reviewed (cited_line_report below). The compare
-    # read is the client's, because only the client reaches GitHub.
+    # the commit it was raised on and the head being reviewed (cited_line_report below), read in the
+    # repository's local checkout.
     def cited_line_report(self, repo: str, head: str, prior: "Prior") -> str: ...
     def upsert_summary(self, repo: str, pr: int, body: str) -> None: ...
     def post_finding(self, repo: str, pr: int, head: str, finding: Mapping[str, Any], body: str) -> bool: ...
@@ -177,18 +177,6 @@ def _valid_sha(value: Any) -> bool:
     return isinstance(value, str) and bool(_SHA_RE.fullmatch(value))
 
 
-def _matching_changed_file(comparison: Mapping[str, Any] | None, path: str) -> Mapping[str, Any] | None:
-    """Return the changed file record for the original cited path, if present."""
-    if comparison is None:
-        return None
-    for changed_file in comparison["files"]:
-        if not isinstance(changed_file, Mapping):
-            continue
-        if path in {changed_file.get("filename"), changed_file.get("previous_filename")}:
-            return changed_file
-    return None
-
-
 def _cited_range_changed(patch: str, start_line: int, end_line: int) -> bool:
     """Return whether a unified-diff hunk changes the cited original range."""
     source_line: int | None = None
@@ -220,11 +208,14 @@ def _changed_report(changed: bool, source_sha: str, head_sha: str) -> str:
     )
 
 
-def cited_line_report(prior: Prior, head_sha: str, compare: Callable[[str, str], tuple[Mapping[str, Any] | None, str]]) -> str:
+CitedPatch = Callable[[str, str, str], tuple["str | None", str]]  # (source_sha, head_sha, path) -> (patch, why not)
+
+
+def cited_line_report(prior: Prior, head_sha: str, cited_patch: CitedPatch) -> str:
     """Describe whether the finding's own cited source lines changed at exact SHAs.
 
-    ``compare(source_sha, head_sha)`` is the client's GitHub comparison, returning its file inventory
-    or the reason it could not be read. The 300-file comparison limit prevents an unsupported claim."""
+    ``cited_patch(source_sha, head_sha, path)`` is the cited file's diff between the two commits
+    (empty when it didn't change), or the reason it could not be read. Nothing is ever called fixed."""
     path, start_line, end_line, source_sha = prior.path, prior.start_line, prior.end_line, prior.source_sha
     if (not isinstance(path, str) or not path or not isinstance(start_line, int) or isinstance(start_line, bool)
             or not isinstance(end_line, int) or isinstance(end_line, bool)
@@ -235,27 +226,31 @@ def cited_line_report(prior: Prior, head_sha: str, compare: Callable[[str, str],
     if source_sha == head_sha:
         return _changed_report(False, source_sha, head_sha)
 
-    data, error = compare(source_sha, head_sha)
-    if error or data is None:
+    patch, error = cited_patch(source_sha, head_sha, path)
+    if error or patch is None:
         return f"Could not check cited lines: {error}; not verified fixed."
-    changed_file = _matching_changed_file(data, path)
-    if changed_file is None:
-        if len(data["files"]) >= 300:
-            return "Could not check cited lines: comparison may omit files; not verified fixed."
-        return _changed_report(False, source_sha, head_sha)
-    patch = changed_file.get("patch")
-    if not isinstance(patch, str):
-        return "Could not check cited lines: comparison omitted the file patch; not verified fixed."
     return _changed_report(_cited_range_changed(patch, start_line, end_line), source_sha, head_sha)
 
 
-def _compare_inventory(data: Any) -> tuple[Mapping[str, Any] | None, str]:
-    """Validate a comparison response."""
-    if not isinstance(data, Mapping) or not isinstance(data.get("files"), list):
-        return None, "GitHub compare returned no file inventory"
-    if data.get("status") not in {"ahead", "identical"}:
-        return None, "finding commit does not precede reviewed head"
-    return data, ""
+def checkout_patch(checkout: Path, source_sha: str, head_sha: str, path: str) -> tuple[str | None, str]:
+    """The cited file's diff from the finding's commit to the reviewed head, read in the local
+    checkout, which has no file limit (GitHub's comparison stops listing files at 300)."""
+    import review_gate_git as rule_git
+    try:
+        rule_git.ensure_commit(checkout, source_sha)
+        rule_git.ensure_commit(checkout, head_sha)
+        ancestry = rule_git.git(checkout, "merge-base", "--is-ancestor", source_sha, head_sha).returncode
+        if ancestry == 1:
+            return None, "finding commit does not precede reviewed head"
+        if ancestry:
+            return None, f"git merge-base failed in {checkout.name}"
+        return rule_git.diff(checkout, source_sha, head_sha, "--", path), ""
+    except rule_git.HeadUnavailable as exc:
+        return None, str(exc)[:160]
+
+
+def _no_checkout(source_sha: str, head_sha: str, path: str) -> tuple[str | None, str]:
+    return None, "no local checkout for this repository"
 
 
 def _counts(findings: Iterable[Mapping[str, Any]]) -> dict[str, int]:
@@ -574,8 +569,10 @@ class ShadowClient:
     the owner's shadow record instead of making it, and only ever names the shadow
     verdict context. Prior findings are the ones this record holds for the PR."""
 
-    def __init__(self, github: Any, record_dir: Path, context: str, review_contexts: Iterable[str] = ()):
+    def __init__(self, github: Any, record_dir: Path, context: str, review_contexts: Iterable[str] = (),
+                 cited_patch: Callable[[str], CitedPatch] = lambda repo: _no_checkout):
         self.github, self.record_dir, self.context = github, record_dir, context
+        self.cited_patch = cited_patch
         self.review_contexts = set(review_contexts) | {context}
 
     def _file(self, repo: str, pr: int) -> Path:
@@ -624,19 +621,8 @@ class ShadowClient:
         self._write(repo, None, "set_thread_resolved", thread_id=thread_id, resolved=resolved)
         return True
     def cited_line_report(self, repo: str, head: str, prior: Prior) -> str:
-        """The same evidence sentence, read through the run's read channel: in shadow the comparison is
-        a read, so it runs for real and only the writes are recorded."""
-        return cited_line_report(prior, head, lambda source, target: self._compare_commits(repo, source, target))
-
-    def _compare_commits(self, repo: str, source_sha: str, head_sha: str) -> tuple[Mapping[str, Any] | None, str]:
-        from review_gate_github import GithubUnavailable
-        try:
-            data = self.github.json(f"repos/{repo}/compare/{source_sha}...{head_sha}")
-        except GithubUnavailable as exc:
-            return None, str(exc)[:160]
-        except ValueError:
-            return None, "GitHub compare returned invalid JSON"
-        return _compare_inventory(data)
+        """The same evidence sentence: in shadow the diff is a read, so it runs for real."""
+        return cited_line_report(prior, head, self.cited_patch(repo))
 
     def failed_checks(self, repo: str, head: str) -> list[str]:
         """The head's failed check names, newest run per name, for the waiting status; [] when unreadable."""
@@ -653,10 +639,8 @@ class ShadowClient:
 # --- Live posting ----------------------------------------------------------------------
 # The client reads thread state and writes comments and statuses through the GitHub proxy.
 
-# Per-call timeouts: 45s for the thread and comment queries, 60s for a comparison, 30s for
-# posts and mutations.
+# Per-call timeouts: 45s for the thread and comment queries, 30s for posts and mutations.
 READ_TIMEOUT_S = 45.0
-COMPARE_TIMEOUT_S = 60.0
 WRITE_TIMEOUT_S = 30.0
 STATUS_RESERVE_S = 35.0  # what a run keeps back so it can still post the error status it ends on
 RUN_OUT_OF_TIME = "run time used up"
@@ -742,9 +726,11 @@ class LiveClient:
 
     def __init__(self, runner: Runner | None = None, *, login: str, contexts: Iterable[str] = (),
                  review_contexts: Iterable[str] = (), run_seconds: float | None = None, clock: Callable[[], float] = time.monotonic,
-                 sleep: Callable[[float], None] | None = None):
+                 sleep: Callable[[float], None] | None = None,
+                 cited_patch: Callable[[str], CitedPatch] = lambda repo: _no_checkout):
         from review_gate_github import Github
         self.runner = runner or _cli_write
+        self.cited_patch = cited_patch
         self.github = Github(lambda args: self._run(["api", *args]))
         self.login = login
         self.contexts = {str(context) for context in contexts if context}
@@ -999,18 +985,7 @@ class LiveClient:
         return None
 
     def cited_line_report(self, repo: str, head: str, prior: Prior) -> str:
-        return cited_line_report(prior, head, lambda source, target: self._compare_commits(repo, source, target))
-
-    def _compare_commits(self, repo: str, source_sha: str, head_sha: str) -> tuple[Mapping[str, Any] | None, str]:
-        """Read a comparison for the exact SHAs and truncate error details."""
-        from review_gate_github import GithubUnavailable
-        try:
-            data = json.loads(self._run(["api", f"repos/{repo}/compare/{source_sha}...{head_sha}"], COMPARE_TIMEOUT_S) or "null")
-        except GithubUnavailable as exc:
-            return None, str(exc)[:160]
-        except ValueError:
-            return None, "GitHub compare returned invalid JSON"
-        return _compare_inventory(data)
+        return cited_line_report(prior, head, self.cited_patch(repo))
 
     def set_thread_resolved(self, repo: str, thread_id: str, resolved: bool) -> bool:
         """GitHub's own review-thread state, set with one GraphQL mutation (``resolveReviewThread``
@@ -1148,9 +1123,18 @@ def rule_main() -> int:
     except (OSError, ValueError) as exc:
         print(f"review-gate publish: invalid input: {exc}", file=sys.stderr)
         return 2
+    import review_gate_git as rule_git
     contexts = rule_config.contexts(config)
-    client = (LiveClient(login=config["agents_login"], contexts=contexts.values(), review_contexts=rule_config.all_contexts(config), run_seconds=config.get("run_seconds")) if config["mode"] == "live"
-              else ShadowClient(Github(), rule_config.folder(config, "shadow_record"), contexts["verdict"], rule_config.all_contexts(config)))
+
+    def cited_patch(repo: str) -> CitedPatch:
+        if repo not in config.get("repo_checkouts", {}):
+            return _no_checkout
+        return lambda source, head, path: checkout_patch(rule_git.checkout(config, repo), source, head, path)
+
+    client = (LiveClient(login=config["agents_login"], contexts=contexts.values(), review_contexts=rule_config.all_contexts(config),
+                         run_seconds=config.get("run_seconds"), cited_patch=cited_patch) if config["mode"] == "live"
+              else ShadowClient(Github(), rule_config.folder(config, "shadow_record"), contexts["verdict"], rule_config.all_contexts(config),
+                                cited_patch))
     try:
         reason, lines = run_rule(event if isinstance(event, Mapping) else {}, config, client,
                                  evaluate.StateStore(rule_config.folder(config, "state")))

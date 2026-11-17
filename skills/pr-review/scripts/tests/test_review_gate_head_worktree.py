@@ -102,3 +102,36 @@ def test_a_worktree_that_cannot_be_added_raises(tmp_path, checkout):
     (tmp_path / "staging").write_text("a file where the staging folder should be")
     with pytest.raises(stage.HeadUnavailable, match="git worktree add"):
         stage.add_head_worktree(checkout, git(checkout, "rev-parse", "HEAD"), tmp_path / "staging" / "req" / "head")
+
+
+# --- the local diff (GitHub refused the PR diff as too large) and since-last-review -------
+
+def test_local_diff_is_the_change_against_the_base_branchs_current_tip(tmp_path, checkout, upstream):
+    git(upstream, "checkout", "-q", "-b", "pr")
+    commit(upstream, "pr.txt", "pr change")
+    git(upstream, "checkout", "-q", "main")
+    commit(upstream, "dev.txt", "base moved on")  # newer base work the PR merges in
+    git(upstream, "checkout", "-q", "pr")
+    git(upstream, "merge", "-q", "--no-edit", "main")
+    head = git(upstream, "rev-parse", "HEAD")
+    git(upstream, "checkout", "-q", "main")
+    git(upstream, "config", "uploadpack.allowAnySHA1InWant", "true")
+    diff = stage.local_diff(checkout, "main", head)  # the clone's origin/main is still the old tip
+    assert "pr.txt" in diff and "dev.txt" not in diff
+
+
+def test_local_diff_refuses_a_ref_that_is_not_a_plain_branch_name(checkout):
+    with pytest.raises(stage.HeadUnavailable, match="plain branch name"):
+        stage.local_diff(checkout, "--upload-pack=x", git(checkout, "rev-parse", "HEAD"))
+
+
+def test_since_last_review_is_the_change_between_the_two_heads(checkout):
+    first = git(checkout, "rev-parse", "HEAD")
+    commit(checkout, "a.txt", "one\nfix")
+    second = git(checkout, "rev-parse", "HEAD")
+    patch = stage.since_last_review(checkout, first, second)
+    assert "+fix" in patch and "a.txt" in patch
+
+
+def test_since_last_review_of_a_head_force_pushed_away_is_none(checkout):
+    assert stage.since_last_review(checkout, "d" * 40, git(checkout, "rev-parse", "HEAD")) is None

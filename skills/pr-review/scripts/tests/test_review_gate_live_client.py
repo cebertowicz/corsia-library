@@ -127,11 +127,10 @@ def client(answer, *, contexts=CONTEXTS, run_seconds=None, clock=None, sleep=Non
                               clock=clock or __import__("time").monotonic, sleep=sleep or __import__("time").sleep), gh
 
 
-def publishing(prior_comments=(), thread_nodes=(), issue_comments=(), refuses="", refuse_status=500, refuse_resolve=False, comparisons=None, run_seconds=None, clock=None, sleep=None, drain=False):
+def publishing(prior_comments=(), thread_nodes=(), issue_comments=(), refuses="", refuse_status=500, refuse_resolve=False, run_seconds=None, clock=None, sleep=None, drain=False):
     """A LiveClient answering one whole publish. ``refuses`` is a path fragment whose write is refused
     with ``refuse_status``; a reply's node lookup is answered from the first prior comment's id; a
-    thread-state mutation is confirmed as asked unless ``refuse_resolve``; ``comparisons`` answers the
-    cited-line comparison with the file inventory a real comparison returns; ``drain`` charges the
+    thread-state mutation is confirmed as asked unless ``refuse_resolve``; ``drain`` charges the
     fake clock for each call's timeout, which is how a run's deadline is exercised."""
     def answer(args, payload, timeout=None):
         if drain and clock is not None:
@@ -140,8 +139,6 @@ def publishing(prior_comments=(), thread_nodes=(), issue_comments=(), refuses=""
         writing = args[-1] == "-"
         if args[1:2] == [PULL]:
             return json.dumps({"head": {"sha": HEAD}, "base": {"sha": OLD_HEAD, "ref": "dev"}})
-        if "/compare/" in joined:
-            return json.dumps(comparisons if comparisons is not None else {"status": "identical", "files": []})
         if args[1:2] == ["graphql"] and "PullRequestReviewThread" in joined:
             return json.dumps({"data": {"node": {"comments": {"nodes": [{"databaseId": prior_comments[0]["id"]}]},
                                               "pullRequest": {"number": PR}}}})
@@ -530,33 +527,63 @@ UNCHANGED = "Cited lines unchanged since finding commit (`" + "a" * 8 + "` → `
 CHANGED = UNCHANGED.replace("unchanged", "changed")
 
 
-def compare_to(data=None, error=""):
-    def compare(source, target):
-        return data, error
-    return compare
+def patch_of(patch=None, error=""):
+    def cited_patch(source, target, path):
+        return patch, error
+    return cited_patch
 
 
 def test_the_not_raised_reply_is_in_sources_body_with_its_marker():
     assert publish.build_resolve_reply_body(UNCHANGED) == f"Not raised this run. {UNCHANGED}\n\n{publish.RESOLVED_REPLY_MARKER}"
 
 
-def test_the_cited_line_report_names_what_the_comparison_shows():
-    other_file = {"status": "ahead", "files": [{"filename": "other.py", "patch": "@@ -1 +1 @@\n-x\n+y"}]}
-    assert publish.cited_line_report(CITED, HEAD, compare_to(other_file)) == UNCHANGED
-    elsewhere = {"status": "ahead", "files": [{"filename": "a.py", "patch": "@@ -20,3 +20,3 @@\n ctx\n-removed\n+added\n ctx"}]}
-    assert publish.cited_line_report(CITED, HEAD, compare_to(elsewhere)) == UNCHANGED
-    cited = {"status": "ahead", "files": [{"filename": "a.py", "patch": "@@ -2,3 +2,2 @@\n ctx\n-removed\n ctx"}]}
-    assert publish.cited_line_report(CITED, HEAD, compare_to(cited)) == CHANGED  # a deletion in the cited range
-    added = {"status": "ahead", "files": [{"filename": "a.py", "patch": "@@ -2,2 +2,3 @@\n ctx\n+added\n ctx"}]}
-    assert publish.cited_line_report(CITED, HEAD, compare_to(added)) == CHANGED  # an insertion inside it
-    outside = {"status": "ahead", "files": [{"filename": "a.py", "patch": "@@ -9,2 +9,3 @@\n ctx\n+added\n ctx"}]}
-    assert publish.cited_line_report(CITED, HEAD, compare_to(outside)) == UNCHANGED  # the same edit elsewhere
-    no_patch = {"status": "ahead", "files": [{"filename": "a.py"}]}
-    assert publish.cited_line_report(CITED, HEAD, compare_to(no_patch)) == "Could not check cited lines: comparison omitted the file patch; not verified fixed."
-    omitted = {"status": "ahead", "files": [{"filename": f"f{i}.py"} for i in range(300)]}
-    assert publish.cited_line_report(CITED, HEAD, compare_to(omitted)) == "Could not check cited lines: comparison may omit files; not verified fixed."
-    failure = "Could not check cited lines: GitHub compare returned no file inventory; not verified fixed."
-    assert publish.cited_line_report(CITED, HEAD, compare_to(None, "GitHub compare returned no file inventory")) == failure
+def test_the_cited_line_report_names_what_the_diff_shows():
+    assert publish.cited_line_report(CITED, HEAD, patch_of("")) == UNCHANGED  # the file didn't change
+    elsewhere = "@@ -20,3 +20,3 @@\n ctx\n-removed\n+added\n ctx"
+    assert publish.cited_line_report(CITED, HEAD, patch_of(elsewhere)) == UNCHANGED
+    cited = "@@ -2,3 +2,2 @@\n ctx\n-removed\n ctx"
+    assert publish.cited_line_report(CITED, HEAD, patch_of(cited)) == CHANGED  # a deletion in the cited range
+    added = "@@ -2,2 +2,3 @@\n ctx\n+added\n ctx"
+    assert publish.cited_line_report(CITED, HEAD, patch_of(added)) == CHANGED  # an insertion inside it
+    outside = "@@ -9,2 +9,3 @@\n ctx\n+added\n ctx"
+    assert publish.cited_line_report(CITED, HEAD, patch_of(outside)) == UNCHANGED  # the same edit elsewhere
+    failure = "Could not check cited lines: finding commit does not precede reviewed head; not verified fixed."
+    assert publish.cited_line_report(CITED, HEAD, patch_of(None, "finding commit does not precede reviewed head")) == failure
+
+
+def test_the_cited_patch_is_read_in_the_checkout_however_many_files_changed(tmp_path):
+    import subprocess
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    def git(*args):
+        return subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True, text=True).stdout.strip()
+
+    git("init", "-q")
+    git("config", "user.email", "")
+    git("config", "user.name", "t")
+    (repo / "a.py").write_text("one\ntwo\nthree\nfour\nfive\nsix\n")
+    git("add", "-A")
+    git("commit", "-q", "-m", "first")
+    first = git("rev-parse", "HEAD")
+    for index in range(310):  # past GitHub's 300-file comparison limit
+        (repo / f"f{index}.txt").write_text(str(index))
+    git("add", "-A")
+    git("commit", "-q", "-m", "many files")
+    many = git("rev-parse", "HEAD")
+    (repo / "a.py").write_text("one\nTWO\nthree\nfour\nfive\nsix\n")
+    git("commit", "-q", "-am", "edit a")
+    edited = git("rev-parse", "HEAD")
+    prior = publish.Prior("PRRT_1", "f", "must_fix", None, False, False, "a.py", 2, 2, first)
+    report = publish.cited_line_report
+
+    def patch(source, head, path):
+        return publish.checkout_patch(repo, source, head, path)
+
+    assert report(prior, many, patch).startswith("Cited lines unchanged since finding commit")
+    assert report(prior, edited, patch).startswith("Cited lines changed since finding commit")
+    later = publish.Prior("PRRT_1", "f", "must_fix", None, False, False, "a.py", 2, 2, edited)
+    assert "does not precede reviewed head" in report(later, first, patch)
 
 
 def test_a_prior_with_nothing_to_cite_or_no_exact_sha_says_so():
@@ -577,17 +604,25 @@ def test_a_prior_with_nothing_to_cite_or_no_exact_sha_says_so():
 
 def test_a_silent_prior_is_replied_to_with_its_evidence_then_resolved():
     """publish_absence_reply on the wire: the cited-line reply lands first, the resolve follows, and the
-    evidence came from a comparison of the two exact commits the finding and the review name."""
+    evidence came from the cited file's diff between the two exact commits the finding and the review name."""
     prior_comment = {**comment(401, finding_body()), "original_commit_id": OLD_HEAD,
                      "original_start_line": 3, "original_line": 3}
-    live, gh = publishing(prior_comments=[prior_comment], thread_nodes=[thread_node("PRRT_1", 401)],
-                          comparisons={"status": "ahead", "files": [{"filename": "other.py", "patch": "@@ -1 +1 @@\n-x\n+y"}]})
+    asked = []
+
+    def cited_patch(repo):
+        def read(source, head, path):
+            asked.append((repo, source, head, path))
+            return "", ""
+        return read
+
+    live, gh = publishing(prior_comments=[prior_comment], thread_nodes=[thread_node("PRRT_1", 401)])
+    live.cited_patch = cited_patch
     result = publish.publish(envelope({"verdict": "pass", "findings": []}), SETTINGS, live)
     assert (result.published, result.reason) == (True, "published")
     replies = [body for body in gh.bodies() if "in_reply_to" in body]
     assert len(replies) == 1 and replies[0]["body"].startswith("Not raised this run. Cited lines unchanged since finding commit")
     assert replies[0]["body"].endswith(publish.RESOLVED_REPLY_MARKER)
-    assert [args[1] for args, _ in gh.calls if "/compare/" in " ".join(args)] == [f"repos/{REPO}/compare/{OLD_HEAD}...{HEAD}"]
+    assert asked == [(REPO, OLD_HEAD, HEAD, "a.py")]
     mutations = [" ".join(args) for args, _ in gh.calls if "ReviewThread(input:" in " ".join(args)]
     assert len(mutations) == 1 and "resolveReviewThread(input:" in mutations[0]
     reply_at = next(index for index, (args, body) in enumerate(gh.calls) if body and "in_reply_to" in body)
@@ -601,11 +636,13 @@ def test_a_worker_reply_on_the_thread_suppresses_the_scripted_one():
                             "evidence": "Still reachable at line 3."}]}
     live, gh = publishing(prior_comments=[{**comment(401, finding_body()), "original_commit_id": OLD_HEAD}],
                           thread_nodes=[thread_node("PRRT_1", 401)])
+    asked = []
+    live.cited_patch = lambda repo: lambda *args: asked.append(args) or ("", "")
     result = publish.publish(envelope(payload), SETTINGS, live)
     assert (result.published, result.reason) == (True, "published")
     assert [body["body"] for body in gh.bodies() if "in_reply_to" in body] == [f"Still open: Still reachable at line 3.\n\n{publish.RESOLVED_REPLY_MARKER}"]
     assert not [args for args, _ in gh.calls if "ReviewThread(input:" in " ".join(args)]
-    assert not [args for args, _ in gh.calls if "/compare/" in " ".join(args)]
+    assert asked == []  # the worker's own evidence stands; the cited lines are not re-read
 
 
 def test_a_worker_reply_citing_a_comment_id_reaches_its_thread():
@@ -662,8 +699,6 @@ def test_the_per_call_timeouts_are_in_sources_own_values():
             return json.dumps({"data": {"resolveReviewThread": {"thread": {"id": "PRRT_1", "isResolved": True}}}})
         if "graphql" in joined:
             return threads_page([])
-        if "/compare/" in joined:
-            return json.dumps({"status": "identical", "files": []})
         if joined.endswith("--input -"):
             return json.dumps({"id": 1})
         if "?per_page=100&page=1" in joined:
@@ -674,7 +709,6 @@ def test_the_per_call_timeouts_are_in_sources_own_values():
     live.current_head(REPO, PR)
     live._thread_states(REPO, PR)
     live._comments(f"{PULL}/comments")
-    live._compare_commits(REPO, OLD_HEAD, HEAD)
     live.post_finding(REPO, PR, HEAD, {"path": "a.py", "line": 3}, "body")
     live.set_thread_resolved(REPO, "PRRT_1", True)
     live.set_status(REPO, HEAD, VERDICT_CONTEXT, "success", "done")
@@ -684,7 +718,6 @@ def test_the_per_call_timeouts_are_in_sources_own_values():
 
     assert timeouts("reviewThreads") == [publish.READ_TIMEOUT_S]
     assert timeouts(f"{PULL}/comments?per_page") == [publish.READ_TIMEOUT_S]
-    assert timeouts("/compare/") == [publish.COMPARE_TIMEOUT_S]
     assert timeouts(f"{PULL}/comments -X POST") == [publish.WRITE_TIMEOUT_S]
     assert timeouts("ReviewThread(input:") == [publish.WRITE_TIMEOUT_S]
     assert timeouts("/statuses/") == [publish.WRITE_TIMEOUT_S]
