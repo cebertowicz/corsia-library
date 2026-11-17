@@ -14,6 +14,12 @@ a failed attempt. stage cannot ask for itself again: the platform skips a rule a
 event's chain. So it
 tries again inside the run, up to ``no_result_retry_bound`` tries, STAGE_RETRY_S apart, and
 after the last raises one terminal error the PR's owner sees, instead of stalling.
+
+GitHub refuses a pull request's diff over 300 files (HTTP 406, ``too_large``); stage then writes
+the diff from the local checkout against the base branch's current tip, so a large PR is
+reviewed instead of failing every try. When an earlier head of the PR was reviewed, stage also
+writes ``since-last-review.patch`` (that head to this one), so a re-review can tell new code from
+code it already read.
 """
 from __future__ import annotations
 
@@ -72,10 +78,18 @@ def stage(facts: Mapping[str, Any], config: Mapping[str, Any], github: Github,
             comments = github.pages(f"repos/{repo}/issues/{pr}/comments")
             review_comments = github.pages(f"repos/{repo}/pulls/{pr}/comments")
             reviews = github.pages(f"repos/{repo}/pulls/{pr}/reviews")
-            diff = github.text(f"repos/{repo}/pulls/{pr}", accept=DIFF)
+            checkout = _checkout(config, repo)
+            try:
+                diff = github.text(f"repos/{repo}/pulls/{pr}", accept=DIFF)
+            except GithubUnavailable as exc:
+                if not _too_large(exc):
+                    raise
+                diff = local_diff(checkout, base_ref, head)
             standards = _standards(config, github, repo, base)
             folder = _staging_dir(config, request_identity)
-            add_head_worktree(_checkout(config, repo), head, folder / "head")
+            add_head_worktree(checkout, head, folder / "head")
+            reviewed = evaluate.get(store.snapshot(), "reviewed", repo, pr)
+            since = since_last_review(checkout, reviewed, head) if reviewed and reviewed != head else None
             break
         except (GithubUnavailable, HeadUnavailable, KeyError, TypeError, ValueError) as exc:
             print(f"review-gate stage_review: try {tried} of {tries}: {exc}", file=sys.stderr)
@@ -93,6 +107,8 @@ def stage(facts: Mapping[str, Any], config: Mapping[str, Any], github: Github,
     _write(folder / "review-comments.json", json.dumps(review_comments, indent=1))
     _write(folder / "reviews.json", json.dumps(reviews, indent=1))
     _write(folder / "diff.patch", diff)
+    if since is not None:
+        _write(folder / "since-last-review.patch", since)
     for path, text in standards.items():
         _write(folder / "standards" / Path(path).name, text)
     staged_ids = sorted({str(item["id"]) for item in (*comments, *review_comments, *reviews)
@@ -152,16 +168,52 @@ def add_head_worktree(checkout: Path, sha: str, dest: Path) -> None:
     serves any commit a pull request's ref reaches).
     """
     _git(checkout, "worktree", "prune")
-    if not _has_commit(checkout, sha):
-        fetched = _git(checkout, "fetch", "--no-tags", "--no-write-fetch-head", "--quiet", "origin", sha)
-        if fetched.returncode or not _has_commit(checkout, sha):
-            raise HeadUnavailable(f"git fetch origin {sha[:12]} in {checkout}: {fetched.stderr.strip()[:400]}")
+    _ensure_commit(checkout, sha)
     if dest.exists():  # a stage re-run for the same request: start from a clean tree
         _git(checkout, "worktree", "remove", "--force", str(dest))
         shutil.rmtree(dest, ignore_errors=True)
     added = _git(checkout, "worktree", "add", "--detach", "--quiet", str(dest), sha)
     if added.returncode:
         raise HeadUnavailable(f"git worktree add {sha[:12]} in {checkout}: {added.stderr.strip()[:400]}")
+
+
+def _too_large(exc: GithubUnavailable) -> bool:
+    text = str(exc)
+    return "too_large" in text or "maximum number of files" in text
+
+
+def _ensure_commit(checkout: Path, sha: str) -> None:
+    if not _has_commit(checkout, sha):
+        fetched = _git(checkout, "fetch", "--no-tags", "--no-write-fetch-head", "--quiet", "origin", sha)
+        if fetched.returncode or not _has_commit(checkout, sha):
+            raise HeadUnavailable(f"git fetch origin {sha[:12]} in {checkout}: {fetched.stderr.strip()[:400]}")
+
+
+def local_diff(checkout: Path, base_ref: str, sha: str) -> str:
+    """The PR's change from the checkout: ``sha`` against its merge base with the base branch's current tip."""
+    if not re.fullmatch(r"[A-Za-z0-9._/-]+", base_ref) or base_ref.startswith("-"):
+        raise HeadUnavailable(f"base ref {base_ref!r} is not a plain branch name")
+    _ensure_commit(checkout, sha)
+    tracking = f"refs/remotes/origin/{base_ref}"
+    fetched = _git(checkout, "fetch", "--no-tags", "--no-write-fetch-head", "--quiet", "origin", f"+refs/heads/{base_ref}:{tracking}")
+    if fetched.returncode:
+        raise HeadUnavailable(f"git fetch origin {base_ref} in {checkout}: {fetched.stderr.strip()[:400]}")
+    done = _git(checkout, "diff", "--no-color", "--no-ext-diff", f"{tracking}...{sha}")
+    if done.returncode:
+        raise HeadUnavailable(f"git diff {base_ref}...{sha[:12]} in {checkout}: {done.stderr.strip()[:400]}")
+    return done.stdout
+
+
+def since_last_review(checkout: Path, reviewed: str, sha: str) -> str | None:
+    """What changed from the last reviewed head to ``sha``, or None when that head can't be read
+    (a force-push dropped it): the re-review then reads as a first review, never fails."""
+    try:
+        _ensure_commit(checkout, reviewed)
+        _ensure_commit(checkout, sha)
+    except HeadUnavailable:
+        return None
+    done = _git(checkout, "diff", "--no-color", "--no-ext-diff", reviewed, sha)
+    return None if done.returncode else done.stdout
 
 
 def _release(store: evaluate.StateStore, identity: evaluate.Identity) -> None:

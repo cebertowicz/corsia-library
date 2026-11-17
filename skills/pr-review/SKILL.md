@@ -5,7 +5,7 @@ license: Apache-2.0
 metadata:
   corsia-data: corsia.yaml
   corsia-format: "1"
-  version: "1.0.3"
+  version: "1.1.0"
 ---
 
 # Pull-request review gate

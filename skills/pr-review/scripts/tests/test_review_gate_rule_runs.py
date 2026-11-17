@@ -27,8 +27,8 @@ IDENTITY = rule_config.request_identity(REPO, 12, HEAD, 1)
 class FakeGithub:
     """Answers the reads stage and publish make; records each request's arguments."""
 
-    def __init__(self, head=HEAD, missing=(), comments=None, base_ref="dev"):
-        self.head, self.missing, self.calls, self.base_ref = head, set(missing), [], base_ref
+    def __init__(self, head=HEAD, missing=(), comments=None, base_ref="dev", too_large=False):
+        self.head, self.missing, self.calls, self.base_ref, self.too_large = head, set(missing), [], base_ref, too_large
         self.comments = comments if comments is not None else [{"id": 101}]
 
     def __call__(self, args):
@@ -40,6 +40,8 @@ class FakeGithub:
                 raise GithubUnavailable("HTTP 404")
             return f"standards {name}"
         if args[1:] == ["-H", "Accept: application/vnd.github.diff"]:
+            if self.too_large:
+                raise GithubUnavailable("GitHub read failed: gh: Sorry, the diff exceeded the maximum number of files (300). (HTTP 406)")
             return "diff --git a/x b/x\n"
         if path.startswith(f"repos/{REPO}/pulls/12?") or path == f"repos/{REPO}/pulls/12":
             return json.dumps({"head": {"sha": self.head}, "base": {"sha": BASE, "ref": self.base_ref}})
@@ -77,6 +79,24 @@ def heads(monkeypatch):
 
     monkeypatch.setattr(stage, "add_head_worktree", add)
     return added
+
+
+@fixture(autouse=True)
+def local_git(monkeypatch):
+    """stage's local-diff and since-last-review steps; real git has its own tests."""
+    asked = []
+
+    def local(checkout, base_ref, sha):
+        asked.append(("local", base_ref, sha))
+        return "diff --git a/local b/local\n"
+
+    def since(checkout, reviewed, sha):
+        asked.append(("since", reviewed, sha))
+        return "diff --git a/s b/s\n"
+
+    monkeypatch.setattr(stage, "local_diff", local)
+    monkeypatch.setattr(stage, "since_last_review", since)
+    return asked
 
 
 @fixture
@@ -199,6 +219,46 @@ def test_no_read_channel_counts_as_a_failed_attempt(config, store, monkeypatch, 
     claim(store)
     reason, _ = stage.stage({"request_identity": IDENTITY}, config, Github(), store)
     assert reason == "stage_retry_bound"
+
+
+def test_a_diff_github_refuses_as_too_large_is_written_from_the_checkout(config, store, local_git):
+    claim(store)
+    reason, lines = stage.stage({"request_identity": IDENTITY}, config, Github(FakeGithub(too_large=True)), store)
+    assert reason == "staged"
+    folder = rule_config.folder(config, "staging") / events(lines)[0]["facts"]["staging_path"]
+    assert (folder / "diff.patch").read_text() == "diff --git a/local b/local\n"
+    assert local_git == [("local", "dev", HEAD)]
+
+
+def test_any_other_diff_failure_still_counts_as_a_failed_try(config, store, local_git):
+    claim(store)
+    fake = FakeGithub()
+    original = fake.__call__
+
+    def down(args):
+        if args[1:] == ["-H", "Accept: application/vnd.github.diff"]:
+            raise GithubUnavailable("GitHub read failed: HTTP 502")
+        return original(args)
+
+    assert stage.stage({"request_identity": IDENTITY}, config, Github(down), store)[0] == "stage_retry_bound"
+    assert local_git == []
+
+
+def test_a_re_review_gets_the_change_since_the_last_reviewed_head(config, store, local_git):
+    claim(store)
+    with store.transaction() as state:
+        evaluate.put(state, "reviewed", REPO, 12, "e" * 40)
+    _, lines = stage.stage({"request_identity": IDENTITY}, config, Github(FakeGithub()), store)
+    folder = rule_config.folder(config, "staging") / events(lines)[0]["facts"]["staging_path"]
+    assert (folder / "since-last-review.patch").read_text() == "diff --git a/s b/s\n"
+    assert local_git == [("since", "e" * 40, HEAD)]
+
+
+def test_a_first_review_has_no_since_last_review_patch(config, store, local_git):
+    claim(store)
+    _, lines = stage.stage({"request_identity": IDENTITY}, config, Github(FakeGithub()), store)
+    folder = rule_config.folder(config, "staging") / events(lines)[0]["facts"]["staging_path"]
+    assert not (folder / "since-last-review.patch").exists() and local_git == []
 
 
 def test_superseded_head_stages_nothing(config, store):
