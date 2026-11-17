@@ -47,8 +47,6 @@ class FakeGithub:
             return json.dumps({"head": {"sha": self.head}, "base": {"sha": BASE, "ref": self.base_ref}})
         if "/issues/12/comments" in path:
             return json.dumps(self.comments if "page=1" in path else [])
-        if "/compare/" in path:
-            return json.dumps({"status": "identical", "files": []})
         if "/pulls/12/comments" in path:
             return json.dumps([{"id": 202}] if "page=1" in path else [])
         if "/pulls/12/reviews" in path:
