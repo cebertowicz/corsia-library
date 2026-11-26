@@ -8,7 +8,6 @@ reserved:
   - microsoft
   - corsia-default
   - corsia-sdlc
-  - agent-experience
   - agent-team-decomposition
   - apply-feedback
   - attention-watch
