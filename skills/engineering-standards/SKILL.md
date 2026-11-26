@@ -3,6 +3,8 @@ name: engineering-standards
 description: >-
   Use when diagnosing, debugging, writing, reviewing, or refactoring code or runtime behavior — trace conceptual forks and root causes, establish intent before calling behavior a defect, and prevent default engineering failures.
 license: Apache-2.0
+compatibility: >-
+  Written for CORSIA. Uses CORSIA's built-in skills task-discipline and apply-feedback, and the wake check in the library skill product-thinking.
 metadata:
   version: "1.0.0"
 ---
