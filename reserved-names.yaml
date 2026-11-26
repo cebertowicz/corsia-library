@@ -19,7 +19,6 @@ reserved:
   - coordination-api
   - decide-or-raise
   - decision-brief
-  - engineering-standards
   - experiment-design
   - google-setup
   - memory-placement
