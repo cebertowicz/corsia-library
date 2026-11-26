@@ -165,3 +165,23 @@ def test_pinned_skill_serves_the_pinned_bytes_after_a_later_edit(tmp_path: Path)
     git(root, "add", "-A")
     git(root, "commit", "-qm", "edit")
     assert build_index(root)["skills"][0]["digest"] == before
+
+
+def test_a_pin_can_record_that_corsia_wrote_the_item(tmp_path: Path) -> None:
+    root = repo(tmp_path)
+    commit = pinned_skill_repo(root)
+    pin_skill(root, commit)
+    assert "author" not in build_index(root)["skills"][0]
+    sources = root / "sources.yaml"
+    sources.write_text(sources.read_text() + "    author: corsia\n")
+    assert build_index(root)["skills"][0]["author"] == "corsia"
+
+
+def test_a_pin_cannot_name_another_author(tmp_path: Path) -> None:
+    root = repo(tmp_path)
+    commit = pinned_skill_repo(root)
+    pin_skill(root, commit)
+    sources = root / "sources.yaml"
+    sources.write_text(sources.read_text() + "    author: someone\n")
+    with pytest.raises(ValidationError, match="author is corsia"):
+        build_index(root)

@@ -33,7 +33,7 @@ A workflow is a skill with a `corsia.yaml` containing `workflow:`. CI refuses a 
 
 An item under `skills/` or `packs/` is checked on every change, and merging it doesn't list it. It has no index row until a pin names a commit on the default branch, so people always install bytes that were reviewed and merged.
 
-To list or update an item, add or change its entry under `own_pins` in `sources.yaml`: `name`, `repo: cebertowicz/corsia-library`, `path` (`skills/<name>` or `packs/<name>`), and the full merged `commit` SHA, quoted. Then run `python tools/build_index.py --root .` and commit `index.json`. The pinned commit must be an ancestor of HEAD. Until the pin changes, the index keeps serving the earlier commit. Pins go in their own pull request, after the item's has merged. A squash merge is fine.
+To list or update an item, add or change its entry under `own_pins` in `sources.yaml`: `name`, `repo: cebertowicz/corsia-library`, `path` (`skills/<name>` or `packs/<name>`), and the full merged `commit` SHA, quoted. Add `author: corsia` only for an item CORSIA itself wrote: an install that said no to what other people shared still offers those items, so leave it out for anyone else's contribution. Then run `python tools/build_index.py --root .` and commit `index.json`. The pinned commit must be an ancestor of HEAD. Until the pin changes, the index keeps serving the earlier commit. Pins go in their own pull request, after the item's has merged. A squash merge is fine.
 
 A blueprint's `manifest.yaml` also lists each non-manifest file and its SHA-256, and its folder includes `CHANGELOG.md`.
 

@@ -323,6 +323,10 @@ def pinned_item(root: Path, pin: Any) -> dict[str, Any]:
     withdrawn, reason = pin.get("withdrawn", False), pin.get("withdrawn_reason")
     if not isinstance(withdrawn, bool) or (reason is not None and not isinstance(reason, str)) or (withdrawn and not reason):
         raise ValidationError("RULE_OWN_PIN", name, "sources.yaml", "withdrawn must be a boolean and withdrawn items need a reason")
+    author = pin.get("author")
+    if author not in (None, "corsia"):
+        raise ValidationError("RULE_OWN_PIN", name, "sources.yaml", "author is corsia for an item CORSIA wrote, or left out")
+    attribution = {"author": author} if author else {}
     if name in reserved_names(root) or any(word in name for word in CLAIM_WORDS):
         raise ValidationError("RULE_OWN_PIN", name, "sources.yaml", "name is reserved or makes a prohibited claim")
     ancestor = subprocess.run(["git", "merge-base", "--is-ancestor", commit, "HEAD"], cwd=root, capture_output=True)
@@ -349,8 +353,8 @@ def pinned_item(root: Path, pin: Any) -> dict[str, Any]:
             target.write_bytes(content)
         source = {"repository": repository, "path": path, "commit": commit}
         if path.startswith("packs/"):
-            return pack_entry(item, source, withdrawn, reason)
-        return {**skill_entry(item), "source": source, "withdrawn": withdrawn, "withdrawn_reason": reason}
+            return {**pack_entry(item, source, withdrawn, reason), **attribution}
+        return {**skill_entry(item), "source": source, "withdrawn": withdrawn, "withdrawn_reason": reason, **attribution}
 
 
 def checkout_pin(entry: dict[str, Any], destination: Path) -> Path:
