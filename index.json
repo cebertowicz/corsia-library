@@ -2,6 +2,34 @@
   "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
   "skills": [
     {
+      "name": "agent-experience",
+      "description": "Use when designing or reviewing anything an agent consumes or operates \u2014 tool schemas and errors, shells, permissions, context sources, bootloaders, skills and triggers, plan and event surfaces, briefs, prompts, CLI output. Map the agent's journey like a user's and verify on a fresh weak-model turn. Not for human-facing UI.",
+      "type": "skill-md",
+      "url": "skills/agent-experience/SKILL.md",
+      "digest": "sha256:16555dd46f5e57bd5bdf4e914c562c674286e601d460cd72f6b3d0aa7d91d3e9",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:479cfac19a8986821527454f0aedfcc8862dc5476488a4a8285b00e4b5ad6cf3"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:16555dd46f5e57bd5bdf4e914c562c674286e601d460cd72f6b3d0aa7d91d3e9"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/agent-experience",
+        "commit": "b2bcebf9800ae3381c79ae6270b618225fa549d4"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null,
+      "author": "corsia"
+    },
+    {
       "name": "atlassian-setup",
       "description": "Use when the work needs a person's Jira, Confluence or other Atlassian Cloud content and Atlassian isn't connected yet. Connects Atlassian's own hosted tool server with one sign-in.",
       "type": "skill-md",
@@ -81,6 +109,34 @@
       },
       "withdrawn": false,
       "withdrawn_reason": null
+    },
+    {
+      "name": "engineering-standards",
+      "description": "Use when diagnosing, debugging, writing, reviewing, or refactoring code or runtime behavior \u2014 trace conceptual forks and root causes, establish intent before calling behavior a defect, and prevent default engineering failures.",
+      "type": "skill-md",
+      "url": "skills/engineering-standards/SKILL.md",
+      "digest": "sha256:b417d7272e93db939eec5109a36faca9745cc384061bb3754caab3c4c7ff3532",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:6abfb039c458f7161525115bd43aec6d5e8e1a6b8d3e481a6e55309c5f8d6cb9"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:b417d7272e93db939eec5109a36faca9745cc384061bb3754caab3c4c7ff3532"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/engineering-standards",
+        "commit": "a40d9a590acac0d81bd73a8f6caff2bccbe0e409"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null,
+      "author": "corsia"
     },
     {
       "name": "evidence-delivery",
@@ -652,6 +708,34 @@
       },
       "withdrawn": false,
       "withdrawn_reason": null
+    },
+    {
+      "name": "product-thinking",
+      "description": "Use before building, proposing, scoping, designing, or approving any feature, product, service, or process change (including an imperative \"build X\" or \"add X\"), any requirements document, and when a user reports a pain point \u2014 run the product chain and hand off via skill `decision-brief`. Not for executing an already-specified change.",
+      "type": "skill-md",
+      "url": "skills/product-thinking/SKILL.md",
+      "digest": "sha256:f67e7cba48703753e4bfd7d172f96b3de451a01aee299f6f5301d9d97663c129",
+      "version": "1.0.0",
+      "kind": "skill",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "sha256:4c6699f7ccf530ce9b0bd542512aa8820be690de715ceb39520611f9cc205bd2"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "sha256:f67e7cba48703753e4bfd7d172f96b3de451a01aee299f6f5301d9d97663c129"
+        }
+      ],
+      "source": {
+        "repository": "cebertowicz/corsia-library",
+        "path": "skills/product-thinking",
+        "commit": "ba09ccd3cc511a0a75a4188fd036ae4810368107"
+      },
+      "withdrawn": false,
+      "withdrawn_reason": null,
+      "author": "corsia"
     },
     {
       "name": "slack-setup",
