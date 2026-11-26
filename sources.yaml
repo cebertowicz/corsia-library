@@ -112,3 +112,18 @@ own_pins:
     repo: cebertowicz/corsia-library
     path: skills/pr-reviewer
     commit: "9712564ab08644b0e2e769b7d1e3e097dcb64676"
+  - name: product-thinking
+    repo: cebertowicz/corsia-library
+    path: skills/product-thinking
+    commit: "ba09ccd3cc511a0a75a4188fd036ae4810368107"
+    author: corsia
+  - name: engineering-standards
+    repo: cebertowicz/corsia-library
+    path: skills/engineering-standards
+    commit: "a40d9a590acac0d81bd73a8f6caff2bccbe0e409"
+    author: corsia
+  - name: agent-experience
+    repo: cebertowicz/corsia-library
+    path: skills/agent-experience
+    commit: "b2bcebf9800ae3381c79ae6270b618225fa549d4"
+    author: corsia
